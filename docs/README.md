@@ -48,6 +48,7 @@ See [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 
 - [项目全景分析（中文）](./20261106-2012-项目全景分析-Claude-Opus-6.md): A full walkthrough of the repository layout, kernel and userspace mechanisms, manager ecosystem, build/release pipeline, and current development focus.
 - [分叉与远程配置（中文）](./20261106-2025-分叉与远程配置-Claude-Opus-6.md): How this checkout is wired to its fork and upstream, plus the daily push and sync commands.
+- [红米 Note 10 5G 兼容性评估（中文）](./20261106-2030-红米Note10-5G兼容性评估-Claude-Opus-6.md): Why a 4.14 non-GKI device cannot use the standard install path, what building a kernel requires, and the lower-effort alternatives.
 
 ## KPM Support
 
