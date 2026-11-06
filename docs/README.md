@@ -47,6 +47,7 @@ See [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 ## Project Analysis
 
 - [项目全景分析（中文）](./20261106-2012-项目全景分析-Claude-Opus-6.md): A full walkthrough of the repository layout, kernel and userspace mechanisms, manager ecosystem, build/release pipeline, and current development focus.
+- [分叉与远程配置（中文）](./20261106-2025-分叉与远程配置-Claude-Opus-6.md): How this checkout is wired to its fork and upstream, plus the daily push and sync commands.
 
 ## KPM Support
 
