@@ -61,6 +61,7 @@ See [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 - [可刷启动镜像打包与结构校验（中文）](./20261106-2314-可刷启动镜像打包与结构校验-Claude-Opus-6.md): Rebuilds the factory boot image with the self-built SukiSU kernel; records the exact header-v2 layout (including the MediaTek DTB header and AVB footer), three packaging decisions, 12 structural checks, artifact checksums, and known gaps. Nothing was flashed.
 - [云电脑资产固化与从零复跑手册（中文）](./20261106-2314-云电脑资产固化与从零复跑手册-Claude-Opus-6.md): All scripts, patches, config excerpts and checksums moved into `tools/camellian/`, plus a stage-by-stage from-scratch rebuild guide for a fresh Linux box.
 - [手机只读边界与刷机授权条件（中文）](./20261106-2327-手机只读边界与刷机授权条件-Claude-Opus-6.md): The user's standing rule — the phone stays read-only until flashing is explicitly authorized. Whitelist of allowed read-only checks, blacklist of forbidden write/reboot/slot-switch actions, what counts as authorization, and what to do if the boundary is crossed.
+- [量产编译配置补验证与用户态组件核对（中文）](./20261107-0016-量产编译配置补验证与用户态组件核对-Claude-Opus-6.md): Corrects the earlier "defconfig omitted the parent switches" claim — the real cause was a first gcc build triggering the kernel Makefile's clang-only option removal. Restores production LTO/CFI, fixes a thin-archive duplicate symbol, fully rebuilds, repacks the boot image with 12 passing checks, and verifies the official userspace binaries, manager APK v2 signature whitelist and UAPI version 6. Nothing was flashed or installed on the phone.
 
 ## KPM Support
 

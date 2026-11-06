@@ -19,7 +19,7 @@ import sys
 STOCK = '/workspace/rom/camellian_eea_global_images_V14.0.4.0.TKSEUXM_13.0/images/boot.img'
 KERNEL = '/workspace/out/arch/arm64/boot/Image.gz'
 OUT_DIR = '/workspace/dist'
-OUT_IMG = OUT_DIR + '/boot-sukisu-stockdtb.img'
+OUT_IMG = sys.argv[1] if len(sys.argv) > 1 else OUT_DIR + '/boot-sukisu-stockdtb.img'
 
 def align(x, a):
     return (x + a - 1) // a * a

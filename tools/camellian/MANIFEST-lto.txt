@@ -1,0 +1,46 @@
+Production LTO/CFI restore + userspace component bundle
+Generated: 2026-11-07 00:07 CST (2026-11-06 16:07 UTC)
+
+CORRECTED ROOT CAUSE
+  The shipped defconfigs DO contain CONFIG_LTO_CLANG=y and CONFIG_CFI_CLANG=y.
+  The earlier claim that "the defconfig omitted the parent switches" was wrong.
+  The options were removed by the kernel Makefile's check-clang-specific-options
+  target during the very first build attempt, which used gcc because CC=clang was
+  only exported as an environment variable. That target silently deletes clang-only
+  options and runs olddefconfig. Later builds used clang but never restored them.
+
+RESTORED CONFIG (identical to factory ikconfig)
+  CONFIG_THIN_ARCHIVES=y CONFIG_LTO=y CONFIG_THINLTO=y
+  # CONFIG_LTO_NONE is not set / CONFIG_LTO_CLANG=y
+  CONFIG_CFI=y / # CONFIG_CFI_PERMISSIVE is not set
+  CONFIG_CFI_CLANG=y CONFIG_CFI_CLANG_SHADOW=y
+  CONFIG_ARCH_SUPPORTS_LTO_CLANG=y CONFIG_ARCH_SUPPORTS_THINLTO=y
+
+NEW BUILD ADAPTATION (6th)
+  drivers/media/platform/mtk-vcu/Makefile listed mtk_vcodec_mem.o twice
+  (once via composite mtk-vcu.o, once directly). Harmless with ld -r, fatal with
+  thin archives + LTO (ld.lld: duplicate symbol). Removed the redundant entry.
+
+BUILD OUTPUT (LTO+CFI, integrated SukiSU kernel)
+  Image.gz       14281028  md5 8d7117ff60b5d6693bcbbc2b3fffad69
+  Image.gz-dtb   14412814  md5 5f773921b4a10156f7a0ab5ffe162e60
+  vmlinux       664822560  md5 bf23b45b74a8efa816911f133263ecfa
+  ksu-prefixed symbols in vmlinux: 327
+
+FLASHABLE ARTIFACT (prepared, NEVER flashed)
+  dist/boot-sukisu-lto-stockdtb.img  67108864
+    md5    4bc14c88fb8b76c370619f3b36c76437
+    sha256 5161e345cc12a0902a84c9e555d50d14fc18a170a08c74852fd3f97f892d19eb
+
+USERSPACE COMPONENTS (official release v4.3.0-r2, downloaded, NOT installed)
+  base https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases/download/v4.3.0-r2/
+  ksud-aarch64-linux-android            7867384  sha256 dec34535789f28e3ecda2788618a2e57c70f77b17b5ce129ff50026b9ba42f35
+  ksuinit-aarch64                         643840  sha256 c7034b996c739734ecefe4357397549443725830c3e395ee4e2dd7913a4c2b26
+  SukiSU_v4.3.0-r2_41150-release.apk  20131351  sha256 6fe64e7bcf9fd768c58f46afea2f27ee9fb85d2783472a7e81334df21e700636
+  Target path expected by the kernel: /data/adb/ksud (data partition, phone side)
+  Manager APK v2 signer certificate: 860 bytes (0x35c),
+    sha256 947ae944f3de4ed4c21a7e4f7953ecf351bfa2b36239da37a34111ad29993eef
+    = first entry of the kernel's hardcoded manager whitelist.
+  UAPI contract version 6 on both sides. Only substantive difference:
+    release has KSU_IOCTL_SET_SPOOF_VERSION (_IOC(WRITE,'K',102,0)), builtin lacks it.
+  Signing block contains only v2 + verity padding pairs, which the kernel accepts.

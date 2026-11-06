@@ -27,3 +27,20 @@ FLASHABLE ARTIFACTS (prepared, NEVER flashed)
   dist/vbmeta-verification-disabled.img           4096
     md5    4feb4c2ac7179f24f8af108e8326d57b
     sha256 3e679bb0b8b2e6fb5d94d8316846b7459eead2209cee8f038cbbdda8c6483750
+
+LTO/CFI FOLLOW-UP BUNDLE (added 2026-11-07)
+  See MANIFEST-lto.txt for the corrected root cause, restored production config,
+  rebuilt kernel hashes, new boot image and userspace component checks.
+  Added / updated files in this directory:
+    MANIFEST-lto.txt
+    config/lto-cfi-config-options.txt
+    patches/kernel-lto-mtk-vcu.patch
+    scripts/build-lto.sh
+    scripts/compare_uapi.py
+    scripts/verify_manager_apk.py
+    scripts/pack_boot.py            (now accepts an optional output path)
+  Current recommended artifact: dist/boot-sukisu-lto-stockdtb.img
+    md5 4bc14c88fb8b76c370619f3b36c76437
+    sha256 5161e345cc12a0902a84c9e555d50d14fc18a170a08c74852fd3f97f892d19eb
+  NOTE: this file supersedes the "defconfig omitted the parent switches" claim
+  in the older reports. See docs/20261107-0016-量产编译配置补验证与用户态组件核对-Claude-Opus-6.md.
