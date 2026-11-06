@@ -44,6 +44,10 @@
 
 查看 [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 
+## 项目分析
+
+- [项目全景分析](../20261106-2012-项目全景分析-Claude-Opus-6.md)：仓库分层结构、内核与用户态提权机制、隐藏检测机制、管理器主题商店生态、构建发布链路，以及当前开发重心的完整梳理。
+
 ## KPM 支持
 
 基于 [KernelPatch](https://github.com/bmax121/KernelPatch) 开发，移除了与 KernelSU 重复的功能，仅保留 KPM 支持。

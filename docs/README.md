@@ -44,6 +44,10 @@ Detailed steps: [`guide/installation.md`](guide/installation.md)
 
 See [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 
+## Project Analysis
+
+- [项目全景分析（中文）](./20261106-2012-项目全景分析-Claude-Opus-6.md): A full walkthrough of the repository layout, kernel and userspace mechanisms, manager ecosystem, build/release pipeline, and current development focus.
+
 ## KPM Support
 
 Based on [KernelPatch](https://github.com/bmax121/KernelPatch), we removed features redundant with KSU and retained only KPM support.
