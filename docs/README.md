@@ -53,7 +53,8 @@ See [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 - [启动锁状态确认（中文）](./20261106-2047-启动锁状态确认-Claude-Opus-6.md): Bootloader-level readback confirming the device is already unlocked, and what that changes for switching root solutions.
 - [内核源码与编译环境摸底（中文）](./20261106-2101-内核源码与编译环境摸底-Claude-Opus-6.md): How to locate the kernel source for a specific MIUI build, the exact branch and firmware package found, and why this Mac cannot build it.
 - [官方内核源码静态核对（中文）](./20261106-2114-官方内核源码静态核对-Claude-Opus-6.md): Findings from a local shallow clone, including config differences, case-sensitivity issues, and the exact manual-hook call sites.
-- [云电脑编译环境体检与量产配置来源结论（中文）](./20261106-2132-云电脑编译环境体检与量产配置来源结论-Claude-Opus-6.md): Remote Linux box readiness, toolchain availability, the clang-only defconfig constraint, why the production kernel config is already authoritative, and firmware download feasibility.
+- [云电脑编译环境体检与量产配置来源结论（中文）](./20261106-2132-云电脑编译环境体检与量产配置来源结论-Claude-Opus-6.md): Remote Linux box readiness, toolchain availability, why the production kernel config is already authoritative, and firmware download feasibility. (Section 3's compiler claim was later corrected — see the next report.)
+- [原版内核试编成功与工具链适配（中文）](./20261106-2201-原版内核试编成功与工具链适配-Claude-Opus-6.md): A clean 4.14.186 kernel image was built on the cloud box; records the five necessary adaptations, artifact verification, and a correction to the earlier LTO/clang assumption.
 
 ## KPM Support
 
