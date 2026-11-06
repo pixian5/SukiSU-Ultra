@@ -56,6 +56,7 @@ See [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 - [云电脑编译环境体检与量产配置来源结论（中文）](./20261106-2132-云电脑编译环境体检与量产配置来源结论-Claude-Opus-6.md): Remote Linux box readiness, toolchain availability, why the production kernel config is already authoritative, and firmware download feasibility. (Section 3's compiler claim was later corrected — see the next report.)
 - [原版内核试编成功与工具链适配（中文）](./20261106-2201-原版内核试编成功与工具链适配-Claude-Opus-6.md): A clean 4.14.186 kernel image was built on the cloud box; records the five necessary adaptations, artifact verification, and a correction to the earlier LTO/clang assumption.
 - [SukiSU 集成试编成功与 4.14 兼容适配（中文）](./20261106-2213-SukiSU集成试编成功与4.14兼容适配-Claude-Opus-6.md): The `builtin` branch was integrated into the 4.14 kernel and compiled successfully; documents the hook sites, five compatibility fixes, disabled optional features, and symbol-level artifact verification.
+- [原厂线刷包下载与量产内核配置最终核对（中文）](./20261106-2234-原厂线刷包下载与量产内核配置最终核对-Claude-Opus-6.md): Why the Fastboot ROM is the right download, MD5 verification, boot image layout, cross-validation of the production kernel config from the factory image, the final correction on clang/LTO, and flashing-script risks.
 
 ## KPM Support
 
