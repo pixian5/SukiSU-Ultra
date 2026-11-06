@@ -1,0 +1,95 @@
+diff --git a/kernel/extension/cpu_spoof.c b/kernel/extension/cpu_spoof.c
+index 0007c2fd..3e23a9b7 100644
+--- a/kernel/extension/cpu_spoof.c
++++ b/kernel/extension/cpu_spoof.c
+@@ -1,3 +1,14 @@
++// SukiSU-Ultra 4.14 GUARD
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
++/* SukiSU-Ultra：4.14 内核缺少 vdso/clocksource.h 等时钟模式定义，
++ * CPU 身份伪装的 vDSO 改写无法在旧内核编译；这里禁用该扩展，
++ * 保留函数符号以免 extension.c 注册时链接断链。 */
++#include <linux/errno.h>
++int ksu_extension_cpu_spoof_io(u32 id, void __user *raw)
++{
++    return -EOPNOTSUPP;
++}
++#else
+ // SPDX-License-Identifier: GPL-2.0
+ /*
+  * CPU spoof extension. io-only: ops = NULL, no sticky enable bit.
+@@ -236,3 +247,5 @@ int ksu_extension_cpu_spoof_io(u32 id, void __user *raw)
+ 
+     return set_spoof_cpu(&cmd);
+ }
++
++#endif /* SukiSU-Ultra 4.14 GUARD */
+diff --git a/kernel/extension/kpm/kpm.c b/kernel/extension/kpm/kpm.c
+index 5735c2d3..b7debdf4 100644
+--- a/kernel/extension/kpm/kpm.c
++++ b/kernel/extension/kpm/kpm.c
+@@ -179,7 +179,7 @@ int do_kpm(void __user *arg)
+     int result;
+     /* Called only through the manager_or_root-authorized extension ioctl. */
+     if (copy_from_user(&cmd, arg, sizeof(cmd))) return -EFAULT;
+-    if (!access_ok(u64_to_user_ptr(cmd.result_code), sizeof(result))) return -EFAULT;
++    if (!ksu_access_ok(u64_to_user_ptr(cmd.result_code), sizeof(result))) return -EFAULT;
+     result = handle_kpm(&cmd);
+     return copy_to_user(u64_to_user_ptr(cmd.result_code), &result, sizeof(result)) ? -EFAULT : 0;
+ }
+diff --git a/kernel/kernel_compat.h b/kernel/kernel_compat.h
+index 2442eef5..0d0f633d 100644
+--- a/kernel/kernel_compat.h
++++ b/kernel/kernel_compat.h
+@@ -54,6 +54,11 @@ struct file *ksu_filp_open_compat(const char *filename, int flags, umode_t mode)
+ #define ksu_access_ok(addr, size) access_ok(VERIFY_READ, addr, size)
+ #endif
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
++/* SukiSU-Ultra：4.14 内核有 kvzalloc 但没有 kvcalloc，这里补一个等价实现 */
++#define kvcalloc(n, size, flags) kvzalloc((n) * (size), (flags))
++#endif
++
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0) // caller is reponsible for sanity!
+ static inline void ksu_zeroed_strncpy(char *dest, const char *src, size_t count)
+ {
+diff --git a/kernel/kernel_includes.h b/kernel/kernel_includes.h
+index 422fde3d..3b709134 100644
+--- a/kernel/kernel_includes.h
++++ b/kernel/kernel_includes.h
+@@ -73,7 +73,10 @@
+ #include <linux/vmalloc.h>
+ #include <linux/tty.h>
+ #include <linux/kref.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
++/* SukiSU-Ultra：static_call 是 5.10 以后才引入的机制，4.14 内核跳过 */
+ #include <linux/static_call.h>
++#endif
+ #include "arch.h"
+ #ifdef CONFIG_KSU_SUSFS
+ #include <linux/susfs.h>
+diff --git a/kernel/manager/pkg_observer.c b/kernel/manager/pkg_observer.c
+index 9082a6de..5a265832 100644
+--- a/kernel/manager/pkg_observer.c
++++ b/kernel/manager/pkg_observer.c
+@@ -21,7 +21,10 @@ static void ksu_track_throne_tw_func(struct callback_head *cb)
+         return;
+     track_throne(false);
+     // Renew the priority uid bitmap filter
++#ifdef CONFIG_KSU_SUSFS
++    /* SukiSU-Ultra：仅在启用隐藏特性时刷新优先级名单 */
+     susfs_parse_priority_app_strings();
++#endif
+ }
+ 
+ // Never scan from the fsnotify handler: fsnotify_mark_srcu and the rename's dir
+@@ -34,7 +37,10 @@ static void ksu_defer_track_throne(void)
+     struct callback_head *cb;
+ 
+     // Renew the getpriority uid bitmap filter
++#ifdef CONFIG_KSU_SUSFS
++    /* SukiSU-Ultra：仅在启用隐藏特性时刷新优先级名单 */
+     susfs_parse_priority_app_strings();
++#endif
+ 
+     if (!(current->flags & PF_KTHREAD)) {
+         cb = kzalloc(sizeof(*cb), GFP_KERNEL);

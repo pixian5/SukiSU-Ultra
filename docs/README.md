@@ -57,6 +57,9 @@ See [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 - [原版内核试编成功与工具链适配（中文）](./20261106-2201-原版内核试编成功与工具链适配-Claude-Opus-6.md): A clean 4.14.186 kernel image was built on the cloud box; records the five necessary adaptations, artifact verification, and a correction to the earlier LTO/clang assumption.
 - [SukiSU 集成试编成功与 4.14 兼容适配（中文）](./20261106-2213-SukiSU集成试编成功与4.14兼容适配-Claude-Opus-6.md): The `builtin` branch was integrated into the 4.14 kernel and compiled successfully; documents the hook sites, five compatibility fixes, disabled optional features, and symbol-level artifact verification.
 - [原厂线刷包下载与量产内核配置最终核对（中文）](./20261106-2234-原厂线刷包下载与量产内核配置最终核对-Claude-Opus-6.md): Why the Fastboot ROM is the right download, MD5 verification, boot image layout, cross-validation of the production kernel config from the factory image, the final correction on clang/LTO, and flashing-script risks.
+- [双槽 VAB 单槽试刷与回退风险对照（中文）](./20261106-2314-双槽VAB单槽试刷与回退风险对照-Claude-Opus-6.md): Why trial-flashing a custom kernel should write only the current slot on this Virtual A/B device, how that differs from a full factory restore, the three-stage rollback order, AVB verification and anti-rollback risks, scripts that must never be used, and a gain/loss comparison against the already installed Magisk Alpha.
+- [可刷启动镜像打包与结构校验（中文）](./20261106-2314-可刷启动镜像打包与结构校验-Claude-Opus-6.md): Rebuilds the factory boot image with the self-built SukiSU kernel; records the exact header-v2 layout (including the MediaTek DTB header and AVB footer), three packaging decisions, 12 structural checks, artifact checksums, and known gaps. Nothing was flashed.
+- [云电脑资产固化与从零复跑手册（中文）](./20261106-2314-云电脑资产固化与从零复跑手册-Claude-Opus-6.md): All scripts, patches, config excerpts and checksums moved into `tools/camellian/`, plus a stage-by-stage from-scratch rebuild guide for a fresh Linux box.
 
 ## KPM Support
 

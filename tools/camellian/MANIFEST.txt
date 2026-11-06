@@ -1,0 +1,29 @@
+Camellian SukiSU-Ultra rebuild asset bundle
+Generated: 2026-11-06 15:11 UTC
+Cloud box: Ubuntu 24.04.5 LTS, x86_64, case-sensitive /workspace
+
+SOURCE
+  Kernel tree : MiCode/Xiaomi_Kernel_OpenSource, branch camellian-t-oss
+                commit f4e416aea06c81f1e661d0524c0554f0538d11cb
+  SukiSU tree: SukiSU-Ultra/SukiSU-Ultra, branch builtin
+  Compiler   : AOSP prebuilt clang-r383902 (clang 11.0.1), android11-release
+                https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/
+                +archive/refs/heads/android11-release/clang-r383902.tar.gz
+
+FACTORY ROM
+  camellian_eea_global_images_V14.0.4.0.TKSEUXM_20230914.0000.00_13.0_eea_af69a61f51.tgz
+  size 5844714100  md5 af69a61f516331e275f8580ea53d662f
+  images/boot.img  md5 f8e4f42a4538b03c519bb70921d88bcc  size 67108864
+
+BUILD OUTPUT (integrated SukiSU kernel)
+  out/arch/arm64/boot/Image.gz      11495575  md5 a9eb569a1780236e3ec0272b2d4b9fcb
+  out/arch/arm64/boot/Image.gz-dtb  11627361  md5 a1b39daa9f7257e2d1b2f46ff37f6824
+  out/vmlinux                      298014656  md5 139759124dc8874658b314c9e796173e
+
+FLASHABLE ARTIFACTS (prepared, NEVER flashed)
+  dist/boot-sukisu-stockdtb.img               67108864
+    md5    fa1f24ae52da1252600dc50c8407d400
+    sha256 773c6a8749532d0c8d02ff8eae381a46b3c697da27d201de52994172ac538338
+  dist/vbmeta-verification-disabled.img           4096
+    md5    4feb4c2ac7179f24f8af108e8326d57b
+    sha256 3e679bb0b8b2e6fb5d94d8316846b7459eead2209cee8f038cbbdda8c6483750
