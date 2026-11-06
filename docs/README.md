@@ -51,6 +51,7 @@ See [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 - [红米 Note 10 5G 兼容性评估（中文）](./20261106-2030-红米Note10-5G兼容性评估-Claude-Opus-6.md): Why a 4.14 non-GKI device cannot use the standard install path, what building a kernel requires, and the lower-effort alternatives.
 - [红米 Note 10 5G 实机核对（中文）](./20261106-2037-红米Note10-5G实测核对-Claude-Opus-6.md): Read-only inspection of the actual device over USB, including kernel config, the running root solution, and corrections to the paper assessment.
 - [启动锁状态确认（中文）](./20261106-2047-启动锁状态确认-Claude-Opus-6.md): Bootloader-level readback confirming the device is already unlocked, and what that changes for switching root solutions.
+- [内核源码与编译环境摸底（中文）](./20261106-2101-内核源码与编译环境摸底-Claude-Opus-6.md): How to locate the kernel source for a specific MIUI build, the exact branch and firmware package found, and why this Mac cannot build it.
 
 ## KPM Support
 
