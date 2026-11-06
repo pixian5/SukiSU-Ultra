@@ -60,6 +60,7 @@ See [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 - [双槽 VAB 单槽试刷与回退风险对照（中文）](./20261106-2314-双槽VAB单槽试刷与回退风险对照-Claude-Opus-6.md): Why trial-flashing a custom kernel should write only the current slot on this Virtual A/B device, how that differs from a full factory restore, the three-stage rollback order, AVB verification and anti-rollback risks, scripts that must never be used, and a gain/loss comparison against the already installed Magisk Alpha.
 - [可刷启动镜像打包与结构校验（中文）](./20261106-2314-可刷启动镜像打包与结构校验-Claude-Opus-6.md): Rebuilds the factory boot image with the self-built SukiSU kernel; records the exact header-v2 layout (including the MediaTek DTB header and AVB footer), three packaging decisions, 12 structural checks, artifact checksums, and known gaps. Nothing was flashed.
 - [云电脑资产固化与从零复跑手册（中文）](./20261106-2314-云电脑资产固化与从零复跑手册-Claude-Opus-6.md): All scripts, patches, config excerpts and checksums moved into `tools/camellian/`, plus a stage-by-stage from-scratch rebuild guide for a fresh Linux box.
+- [手机只读边界与刷机授权条件（中文）](./20261106-2327-手机只读边界与刷机授权条件-Claude-Opus-6.md): The user's standing rule — the phone stays read-only until flashing is explicitly authorized. Whitelist of allowed read-only checks, blacklist of forbidden write/reboot/slot-switch actions, what counts as authorization, and what to do if the boundary is crossed.
 
 ## KPM Support
 
