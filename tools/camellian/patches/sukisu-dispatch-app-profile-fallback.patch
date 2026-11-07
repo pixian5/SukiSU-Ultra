@@ -1,0 +1,32 @@
+# SukiSU-Ultra：读取不存在的应用配置时返回默认 profile
+# 目标树：SukiSU-Ultra builtin 分支（手动挂钩构建用）
+# 作用：官方 release 管理器把 -ENOENT 当成失败，导致授权中止；
+#       改为返回 use_default=true 的空白 profile。
+# 应用：在 SukiSU 仓库根目录执行 git apply（或由 integrate.py 自动注入）。
+#
+--- a/kernel/supercall/dispatch.c
++++ b/kernel/supercall/dispatch.c
+@@ -315,7 +315,22 @@
+     profile = ksu_get_app_profile(uid);
+     rcu_read_unlock();
+     if (!profile) {
+-        ret = -ENOENT;
++        /* SukiSU-Ultra：官方 release 管理器把「配置不存在」当成失败，
++         * 授权流程会中止（界面提示「更新 app profile 失败」）。
++         * 这里返回一份允许默认配置的空白 profile，让授权能继续。 */
++        struct app_profile fallback;
++
++        memset(&fallback, 0, sizeof(fallback));
++        fallback.version = KSU_APP_PROFILE_VER;
++        fallback.curr_uid = uid;
++        fallback.allow_su = false;
++        fallback.nrp_config.use_default = true;
++        fallback.nrp_config.profile.umount_modules = true;
++        if (copy_to_user((char __user *)arg + offsetof(struct ksu_get_app_profile_cmd, profile),
++                         &fallback, sizeof(fallback))) {
++            pr_err("get_app_profile: copy_to_user fallback failed\n");
++            ret = -EFAULT;
++        }
+     } else {
+         if (copy_to_user((char __user *)arg + offsetof(struct ksu_get_app_profile_cmd, profile), profile,
+                          sizeof(struct app_profile))) {

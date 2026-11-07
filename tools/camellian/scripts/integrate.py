@@ -96,4 +96,65 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 #endif
 ''',
  'fs/read_write.c extern + hook call')
+
+# 8) kernel/reboot.c：给 ksud 子进程保留申请内核通道的入口
+#    缺这一步时管理器能显示「工作中」，但授权会失败并报
+#    "could not retrieve kernelsu driver fd"。
+patch('kernel/reboot.c',
+ '''SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+\t\tvoid __user *, arg)
+{
+\tstruct pid_namespace *pid_ns = task_active_pid_ns(current);
+\tchar buffer[256];
+\tint ret = 0;
+''',
+ '''SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+\t\tvoid __user *, arg)
+{
+\tstruct pid_namespace *pid_ns = task_active_pid_ns(current);
+\tchar buffer[256];
+\tint ret = 0;
+
+#ifdef CONFIG_KSU
+\t{
+\t\t/* SukiSU-Ultra：给 ksud 子进程一个申请内核通道的入口。
+\t\t * 管理器注入的匿名 fd 带 exec 关闭标志，子进程继承不到，
+\t\t * 因此 ksud 通过带魔数的 reboot 系统调用重新申请。 */
+\t\textern int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg);
+\t\tint ksu_ret = ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
+\t\tif (ksu_ret == 0)
+\t\t\treturn 0;
+\t}
+#endif
+''',
+ 'kernel/reboot.c ksu hook')
+
+# 9) 模块侧 supercall/dispatch.c：读取不存在的应用配置时返回默认 profile
+#    官方 release 管理器把 -ENOENT 当成失败，会中止授权流程。
+#    路径经由 drivers/kernelsu 软链接落在 SukiSU 仓库里。
+patch('drivers/kernelsu/supercall/dispatch.c',
+ '''    if (!profile) {
+        ret = -ENOENT;
+    } else {
+''',
+ '''    if (!profile) {
+        /* SukiSU-Ultra：官方 release 管理器把「配置不存在」当成失败，
+         * 授权流程会中止（界面提示「更新 app profile 失败」）。
+         * 这里返回一份允许默认配置的空白 profile，让授权能继续。 */
+        struct app_profile fallback;
+
+        memset(&fallback, 0, sizeof(fallback));
+        fallback.version = KSU_APP_PROFILE_VER;
+        fallback.curr_uid = uid;
+        fallback.allow_su = false;
+        fallback.nrp_config.use_default = true;
+        fallback.nrp_config.profile.umount_modules = true;
+        if (copy_to_user((char __user *)arg + offsetof(struct ksu_get_app_profile_cmd, profile),
+                         &fallback, sizeof(fallback))) {
+            pr_err("get_app_profile: copy_to_user fallback failed\\n");
+            ret = -EFAULT;
+        }
+    } else {
+''',
+ 'dispatch.c app_profile fallback')
 print('[done]')

@@ -1,0 +1,28 @@
+# SukiSU-Ultra：reboot 系统调用钩子（4.14 camellian 手动挂钩）
+# 目标树：MiCode/Xiaomi_Kernel_OpenSource camellian-t-oss
+#         commit f4e416aea06c81f1e661d0524c0554f0538d11cb
+# 作用：ksud 通过带魔数的 reboot 系统调用申请内核通道；缺这个调用时
+#       授权链路报 "could not retrieve kernelsu driver fd"。
+# 应用：在厂商内核源码根目录执行 git apply（或由 integrate.py 自动注入）。
+#
+--- a/kernel/reboot.c
++++ b/kernel/reboot.c
+@@ -283,6 +283,18 @@
+ 	struct pid_namespace *pid_ns = task_active_pid_ns(current);
+ 	char buffer[256];
+ 	int ret = 0;
++
++#ifdef CONFIG_KSU
++	{
++		/* SukiSU-Ultra：给 ksud 子进程一个申请内核通道的入口。
++		 * 管理器注入的匿名 fd 带 exec 关闭标志，子进程继承不到，
++		 * 因此 ksud 通过带魔数的 reboot 系统调用重新申请。 */
++		extern int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg);
++		int ksu_ret = ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
++		if (ksu_ret == 0)
++			return 0;
++	}
++#endif
+ 
+ 	/* We only trust the superuser with rebooting the system. */
+ 	if (!ns_capable(pid_ns->user_ns, CAP_SYS_BOOT))

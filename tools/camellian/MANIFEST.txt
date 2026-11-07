@@ -85,3 +85,24 @@ READ-ONLY PARTITION BACKUP (added 2026-11-07 08:52)
     grew 21078370 -> 21246673, magisk marker found after gzip decompress.
   docs/20261107-0029 section 6.2 backup command was corrected accordingly.
   See docs/20261107-0852-手机分区只读备份与传输污染排查-Claude-Opus-6.md.
+
+WORKING IMAGE + AUTHORIZATION FIXES (added 2026-11-08)
+  Flashed and verified on the phone (boot_b only, no other partition written):
+    backup/camellian/boot-sukisu-final3-lto-stockdtb.img  67108864
+      md5    3f687ecbc07f24ac0ecfbea56ebe14f5
+      sha256 96584b65f0010b889250e7d36c042efcb582caf989f50ce1e2cc19676c9c2727
+    kernel 4.14.186-perf-gf4e416aea-dirty #11, manual hook, CONFIG_KSU_DEBUG off.
+  IMPORTANT: a from-scratch rebuild with the older bundle produced a bootable
+  image whose root authorization FAILED. Two fixes existed only on the cloud
+  build tree and are now archived here and injected by integrate.py steps 8/9:
+    patches/kernel-reboot-ksu-hook.patch
+      target: vendor kernel tree root (MiCode camellian-t-oss f4e416aea...)
+      adds  : ksu_handle_sys_reboot() call at the top of SYSCALL_DEFINE4(reboot)
+    patches/sukisu-dispatch-app-profile-fallback.patch
+      target: SukiSU repo root, builtin branch (origin/builtin@1cfa5734)
+      adds  : default app_profile (use_default=true) when !ksu_get_app_profile
+  Both patches verified with `patch -p1 --dry-run` against the exact upstream
+  files on 2026-11-08. Without them the manager still shows "working" but
+  authorization fails with "could not retrieve kernelsu driver fd" and
+  "failed to update app profile".
+  See docs/20261108-0046-项目现状复核与复现风险-DeepSeek-V4.1-Flash.md.
