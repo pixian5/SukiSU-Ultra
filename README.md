@@ -10,20 +10,21 @@
 
 真机 root **已可用并验证通过**：自编 4.14 内核刷入 `boot_b` 后正常开机，管理器显示「工作中」，授权成功；12 个分区只读备份与精确回退件均已就位。
 
-本轮（2026-11-08）做了两件事：
+本轮（2026-11-08）做了三件事：
 
 1. 把两处关键授权修复固化进仓库（厂商内核 `kernel/reboot.c` 钩子、模块侧 `dispatch.c` 默认 profile 回退），并接入 `integrate.py` 第 8、9 步；
-2. **把 SuSFS 接入 4.14 内核并完整编译通过**：上游 v1.5.5 的 4.14 原生核心 + 自写 v2.3.0 ABI 翻译层，产出 `Image.gz`（51 个 `susfs_` 符号、版本串 `v2.3.0`）。这在 [tools/camellian-susfs](tools/camellian-susfs/) 里，配套一键接入与校验脚本。
+2. **把 SuSFS 接入 4.14 内核并完整编译通过**：上游 v1.5.5 的 4.14 原生核心 + 自写 v2.3.0 ABI 翻译层。这在 [tools/camellian-susfs](tools/camellian-susfs/) 里，配套一键接入与校验脚本。
+3. **用出厂配置 + LTO/CFI 打出可刷镜像**：`dist/boot-sukisu-susfs-lto-stockdtb.img`，67,108,864 字节，MD5 `322fd6381c8b6d546b0298fbd1b7736f`，10/10 结构校验通过。内核 `4.14.186-perf-gf4e416aea-dirty`，52 个 susfs 符号，版本串 `v2.3.0`。
 
-> 注意：SuSFS 产物目前只是**编译验证镜像**，用了通用 defconfig、关闭了 LTO/CFI，不能直接刷机。
+> 注意：镜像已可刷入，但**尚未在真机上验证**；刷机需你明确授权并执行，回退件 `boot_b-before.img` 仍在。
 
-详细进度：[docs/20261108-0101-当前开发进度-DeepSeek-V4.1-Flash.md](docs/20261108-0101-当前开发进度-DeepSeek-V4.1-Flash.md)、[SUSFS 移植与验证报告](docs/20261108-0210-SUSFS-v2.3.0移植与编译验证-DeepSeek-V4.1-Flash.md)
+详细进度：[docs/20261108-0101-当前开发进度-DeepSeek-V4.1-Flash.md](docs/20261108-0101-当前开发进度-DeepSeek-V4.1-Flash.md)、[SUSFS 移植与验证报告](docs/20261108-0210-SUSFS-v2.3.0移植与编译验证-DeepSeek-V4.1-Flash.md)、[可刷镜像构建与产物](docs/20261108-0250-SUSFS可刷镜像构建与产物-DeepSeek-V4.1-Flash.md)
 
 ## 【下一步待实现】
 
-1. **SuSFS 真机可用**：用出厂量产配置 + LTO/CFI 重建 → `pack_boot.py` 打包 → 用户明确授权后刷 `boot_b` → 真机验证 sus_path / sus_mount / sus_kstat；
+1. **刷机并真机验证**：`fastboot flash boot_b dist/boot-sukisu-susfs-lto-stockdtb.img` → 确认管理器「工作中」、`susfs is initialized! version: v2.3.0`、`ksud susfs status`，再用 Momo 复测隐藏效果；
 2. **复现闭环**：按新补丁重建内核，与当前 `final3` 镜像对比校验值或给出功能等价证据；
-3. **资产安全**：回传云电脑实际修改文件，给回退件与可用镜像做异地备份；
+3. **资产安全**：给回退件与可用镜像做异地备份；
 4. **仓库同步**：合并上游 7 个提交；
 5. **真机收尾**：重启验证 Zygisk Next、逐个启用模块、核对授权列表。
 

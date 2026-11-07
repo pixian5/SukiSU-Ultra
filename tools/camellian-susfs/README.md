@@ -85,9 +85,14 @@ cat tools/camellian-susfs/config/susfs-4.14-config.txt >> <defconfig 或 .config
 
 ## 验证状态
 
-- 编译验证：见 `docs/20261108-*.md`（本次在 x86_64 Linux 沙箱用 AOSP clang-r383902 完整编译）。
+- 编译验证（2026-11-08）：x86_64 Linux 沙箱，AOSP clang-r383902 完整编译通过。
+- 可刷镜像（2026-11-08）：用**出厂 ikconfig + LTO/CFI** 编译，装回原厂内存盘/DTB，10/10 结构校验通过。
+  - `dist/boot-sukisu-susfs-lto-stockdtb.img` 67,108,864 字节
+  - MD5 `322fd6381c8b6d546b0298fbd1b7736f`
+  - SHA256 `c3c2c6d75382ed06ebcbbd3dd9bbbf8dc234410860fa47de99b122ec98a44760`
+  - 内核 `4.14.186-perf-gf4e416aea-dirty`，52 个 `susfs_` 符号
 - 真机验证：**未刷入**。刷机需要用户明确授权，且会写 `boot_b`。
-- 本包不改变启动镜像打包流程；产物仍是 `Image.gz-dtb`，按 `tools/camellian/scripts/pack_boot.py` 打包。
+- 本包不改变启动镜像打包流程；`bootimg.py` 与既有 `pack_boot.py` 的布局假设一致。
 
 ## 来源与许可
 
