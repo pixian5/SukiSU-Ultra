@@ -3,6 +3,7 @@
 > 时间：2026-11-08 02:45（GMT+8）
 > 模型：DeepSeek-V4.1-Flash
 > 结论：**已用出厂量产配置 + LTO/CFI 编出可刷入的 `boot` 镜像**，10/10 结构校验通过。
+> 已发布：[Release camellian-susfs-v0.0.4](https://github.com/pixian5/SukiSU-Ultra/releases/tag/camellian-susfs-v0.0.4)（pre-release，含 `SHA256SUMS.txt`）。
 > 本轮只产出文件，**没有刷机、没有碰手机**。
 
 ---

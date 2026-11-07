@@ -14,7 +14,7 @@
 
 1. 把两处关键授权修复固化进仓库（厂商内核 `kernel/reboot.c` 钩子、模块侧 `dispatch.c` 默认 profile 回退），并接入 `integrate.py` 第 8、9 步；
 2. **把 SuSFS 接入 4.14 内核并完整编译通过**：上游 v1.5.5 的 4.14 原生核心 + 自写 v2.3.0 ABI 翻译层。这在 [tools/camellian-susfs](tools/camellian-susfs/) 里，配套一键接入与校验脚本。
-3. **用出厂配置 + LTO/CFI 打出可刷镜像**：`dist/boot-sukisu-susfs-lto-stockdtb.img`，67,108,864 字节，MD5 `322fd6381c8b6d546b0298fbd1b7736f`，10/10 结构校验通过。内核 `4.14.186-perf-gf4e416aea-dirty`，52 个 susfs 符号，版本串 `v2.3.0`。
+3. **用出厂配置 + LTO/CFI 打出可刷镜像**：`dist/boot-sukisu-susfs-lto-stockdtb.img`，67,108,864 字节，MD5 `322fd6381c8b6d546b0298fbd1b7736f`，10/10 结构校验通过。内核 `4.14.186-perf-gf4e416aea-dirty`，52 个 susfs 符号，版本串 `v2.3.0`。已发布到 [Release camellian-susfs-v0.0.4](https://github.com/pixian5/SukiSU-Ultra/releases/tag/camellian-susfs-v0.0.4)（pre-release，含 SHA256SUMS）。
 
 > 注意：镜像已可刷入，但**尚未在真机上验证**；刷机需你明确授权并执行，回退件 `boot_b-before.img` 仍在。
 
