@@ -63,6 +63,9 @@ Linux version 4.14.186-perf-gf4e416aea-dirty (user@main)
 
 > **GitHub 凭证不需要**：以上仓库都是公开的，`git clone https://...` 直接可用。如果 clone 慢或被 TLS 中断，可以在能访问的机器上 clone 后打包，通过对象存储中转（见第 8 节）。
 
+> **GitCode 镜像（推荐给访问 GitHub 不稳定的机器）**：`https://gitcode.com/laotongtian/SukiSU-Ultra`
+> 这是本项目的镜像仓库，包含全部文档、补丁（`tools/camellian-susfs/patches/`）和工具。公开仓库，`git clone` 不需要令牌；推送才需要（令牌见单独的凭证文件）。
+
 ---
 
 ## 5. 操作步骤
