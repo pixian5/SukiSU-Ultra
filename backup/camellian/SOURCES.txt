@@ -29,11 +29,16 @@ Current mainline
               permission ("刷机").
 
 Experimental variant (NOT a flashing candidate)
-        Built locally to test CONFIG_KALLSYMS_ALL=n and a different
-        command-rejection point. Source snapshot only:
-        tools/camellian-susfs/patches/experimental-kallsyms-off/
+        Built and packages successfully (make rc=0, 12/12 structural checks)
+        to test CONFIG_KALLSYMS_ALL=n and a different command-rejection point.
+        Source snapshot: tools/camellian-susfs/patches/experimental-kallsyms-off/
+        Image: /workspace/dist/boot-sukisu-susfs-experimental.img on the
+               cloud box only (not copied to this machine, not published)
+        md5    5526db7c1e146e44c98109c5fcbf44af
+        sha256 4f137e4d23d7463373f308bf2a08d63abc590b1b6f18b06acb12fdf3e9040a99
         Its rejection method is less correct than the mainline ABI-layer
-        approach, so it is kept for reference, never published as a release.
+        approach, and KALLSYMS_ALL=n is unverified on a real device.
+        Reference only, never flash it.
 
 Archived, NOT for flashing (evidence only)
         cst:xbz/camellian/archive/boot-sukisu-susfs-cst-0356-v230.img

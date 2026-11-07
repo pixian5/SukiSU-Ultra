@@ -76,10 +76,15 @@ SuSFS 候选镜像来源清单（2026-11-08 04:20 补充）
       禁止把「固定文件名」当作版本号；优先用发布页资产或
       cst:xbz/camellian/releases/v0.0.6/boot-sukisu-susfs-v0.0.6-3248b6a1.img
 
-实验变体（本机编译，仅存档、不发布、不作为刷机候选）
-      tools/camellian-susfs/patches/experimental-kallsyms-off/
-      差异：关掉 KALLSYMS_ALL、在命令分发处拒绝四条命令、加开机标记
-      它的拒绝方式不如主线贴合用户态协议，不要覆盖主线源码。
+实验变体（云电脑编译成功，仅存档、不发布、不作为刷机候选）
+      路径 /workspace/dist/boot-sukisu-susfs-experimental.img（仅云电脑）
+      md5 5526db7c1e146e44c98109c5fcbf44af
+      sha256 4f137e4d23d7463373f308bf2a08d63abc590b1b6f18b06acb12fdf3e9040a99
+      大小 67108864，编译 rc=0，打包 12/12 校验通过
+      源码 tools/camellian-susfs/patches/experimental-kallsyms-off/
+      差异：关掉 KALLSYMS_ALL（实测生效、内核变小）、在命令分发处拒绝
+      四条命令、加开机标记；真机未验证
+      它的拒绝方式不如主线贴合用户态协议，不要覆盖主线源码、不要刷入。
 
 所有 SuSFS 镜像都只做了结构校验，**没有真机验证**。手机仍运行
 boot-sukisu-final3-lto-stockdtb.img（内核 #11，槽 b），回退件
