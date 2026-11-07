@@ -10,23 +10,22 @@
 
 真机 root **已可用并验证通过**：自编 4.14 内核刷入 `boot_b` 后正常开机，管理器显示「工作中」，授权成功；12 个分区只读备份与精确回退件均已就位。
 
-本轮（2026-11-08）把两处关键授权修复固化进仓库：
+本轮（2026-11-08）做了两件事：
 
-1. 厂商内核树 `kernel/reboot.c` 的 `ksu_handle_sys_reboot` 调用；
-2. 模块侧 `kernel/supercall/dispatch.c` 的默认 app profile 回退。
+1. 把两处关键授权修复固化进仓库（厂商内核 `kernel/reboot.c` 钩子、模块侧 `dispatch.c` 默认 profile 回退），并接入 `integrate.py` 第 8、9 步；
+2. **把 SuSFS 接入 4.14 内核并完整编译通过**：上游 v1.5.5 的 4.14 原生核心 + 自写 v2.3.0 ABI 翻译层，产出 `Image.gz`（51 个 `susfs_` 符号、版本串 `v2.3.0`）。这在 [tools/camellian-susfs](tools/camellian-susfs/) 里，配套一键接入与校验脚本。
 
-两者均已写入 `tools/camellian/patches/`，并接入 `tools/camellian/scripts/integrate.py` 第 8、9 步，从零重建不再产出「能开机但授权失败」的镜像。
+> 注意：SuSFS 产物目前只是**编译验证镜像**，用了通用 defconfig、关闭了 LTO/CFI，不能直接刷机。
 
-详细进度：[docs/20261108-0101-当前开发进度-DeepSeek-V4.1-Flash.md](docs/20261108-0101-当前开发进度-DeepSeek-V4.1-Flash.md)
+详细进度：[docs/20261108-0101-当前开发进度-DeepSeek-V4.1-Flash.md](docs/20261108-0101-当前开发进度-DeepSeek-V4.1-Flash.md)、[SUSFS 移植与验证报告](docs/20261108-0210-SUSFS-v2.3.0移植与编译验证-DeepSeek-V4.1-Flash.md)
 
 ## 【下一步待实现】
 
-按优先级依次为：
-
-1. **复现闭环**：按新补丁重建内核，与当前 `final3` 镜像对比校验值或给出功能等价证据；
-2. **资产安全**：回传云电脑实际修改文件，给回退件与可用镜像做异地备份；
-3. **仓库同步**：合并上游 7 个提交；
-4. **真机收尾**：重启验证 Zygisk Next、逐个启用模块、核对授权列表、记录可用配置。
+1. **SuSFS 真机可用**：用出厂量产配置 + LTO/CFI 重建 → `pack_boot.py` 打包 → 用户明确授权后刷 `boot_b` → 真机验证 sus_path / sus_mount / sus_kstat；
+2. **复现闭环**：按新补丁重建内核，与当前 `final3` 镜像对比校验值或给出功能等价证据；
+3. **资产安全**：回传云电脑实际修改文件，给回退件与可用镜像做异地备份；
+4. **仓库同步**：合并上游 7 个提交；
+5. **真机收尾**：重启验证 Zygisk Next、逐个启用模块、核对授权列表。
 
 详细清单与验收标准：[docs/20261108-0101-下一步待实现-DeepSeek-V4.1-Flash.md](docs/20261108-0101-下一步待实现-DeepSeek-V4.1-Flash.md)
 
