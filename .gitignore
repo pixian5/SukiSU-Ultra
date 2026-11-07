@@ -9,3 +9,6 @@ __pycache__
 /userspace/ksud/.lkm_image_bootstrap.o
 /.cursor
 /.claude
+
+# Local-only, device-specific artifacts. Never commit (large partition dumps).
+/backup/

@@ -32,7 +32,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ADB = '/Users/x/Library/Android/sdk/platform-tools/adb'
-OUT = Path('/Users/x/camellian-flash')
+# Local-only artifacts live INSIDE the project tree and are gitignored.
+# tools/camellian/scripts/ -> repo root is three parents up.
+REPO_ROOT = Path(__file__).resolve().parents[3]
+OUT = REPO_ROOT / 'backup' / 'camellian'
 
 # Partition names only; the actual block device node is resolved live on the
 # phone, because /dev/block/sdcNN numbering can change across reboots.

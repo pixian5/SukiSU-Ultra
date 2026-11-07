@@ -65,7 +65,7 @@ OPTIONAL-FEATURES BUNDLE (added 2026-11-07 08:04)
 READ-ONLY PARTITION BACKUP (added 2026-11-07 08:52)
   Script : scripts/backup_partitions_readonly.py (runs on the local Mac,
            NOT on the cloud box).
-  Output : /Users/x/camellian-flash/ -- 12 *-before.img files plus
+  Output : /Users/x/code/SukiSU-Ultra/backup/camellian/ -- 12 *-before.img files plus
            BACKUP-MANIFEST.txt and device-state-before.txt. Not tracked by git.
   Scope  : separately authorized by the user as a READ-ONLY backup. This is
            NOT a flashing authorization. Phone stays zero-write.
