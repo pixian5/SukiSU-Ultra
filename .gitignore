@@ -11,5 +11,12 @@ __pycache__
 /.claude
 /.workbuddy
 
-# Local-only, device-specific artifacts. Never commit (large partition dumps).
-/backup/
+# Backup directory: only small metadata files go into git.
+# Credentials and large binaries must never be committed (use Release instead).
+/backup/.rclone-cst.conf
+/backup/HANDOFF-CREDENTIALS.txt
+/backup/.DS_Store
+/backup/**/*.img
+/backup/**/*.apk
+/backup/**/*.tgz
+/backup/**/*.tar.gz

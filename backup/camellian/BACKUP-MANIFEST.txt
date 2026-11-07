@@ -1,0 +1,32 @@
+SukiSU-Ultra / camellian READ-ONLY PARTITION BACKUP MANIFEST
+captured: 2026-11-07T08:49:10.969926+08:00
+purpose: exact rollback of the current slot (boot_b / vbmeta_b),
+         plus related verification and device-tree partitions.
+transport note: adb exec-out rewrites 0x0A as 0x0D 0x0A (LF->CRLF).
+                Each image is restored by CRLF->LF reversal and is
+                REJECTED unless its length equals the kernel-reported
+                partition size (/sys/class/block/<dev>/size * 512).
+                Earlier truncated/raw copies were discarded as unsafe.
+Each partition was read twice and the restored payloads compared.
+
+boot_b               dev=sdc49  size=  67108864 magic=414e44524f494421  md5=531c534bcc8d3172e03b12a2f6dd135d  sha256=b9d982969d4e4d6dad9a0ebb9e46b9b5118a48ef19a576658cb63f4ade347513
+vbmeta_b             dev=sdc11  size=   8388608 magic=4156423000000001  md5=96d0ca958c138b0d4bf5eb52fe4f78e8  sha256=b461db91e6fbcf65e85a26d6a2a3533f23f91cdb683ffda6a9ad4a80c138a278
+vbmeta_system_b      dev=sdc12  size=   8388608 magic=4156423000000001  md5=d59d09e052d39deedf3766e12d215707  sha256=209b8a032afb65cb31421070539a416706a51c2195d1fad737af32e730e4aef0
+vbmeta_vendor_b      dev=sdc13  size=   8388608 magic=4156423000000001  md5=5d83e68f2cbef85f7ffe6bce4cbd9ebf  sha256=6629c976cb88dbcc231e6aa98b72f1e364fd34dc4277ddd5bb2eba9d8efc0549
+dtbo_b               dev=sdc51  size=   8388608 magic=d7b7ab1e00024078  md5=a01d21dbbcfcc2e4fbd68566dfaf64b9  sha256=07a695745dc7e684c984af771b7e6a7662f9108a5e3f63e6f82d7cbfaf8225b4
+vendor_boot_b        dev=sdc50  size=  67108864 magic=414e44524f494421  md5=ccb667648941b6a84072b7b6da437a5b  sha256=5a38300d7498f54f641e0fcd160f8dba81ba330221ce36476b750fd777d3db12
+boot_a               dev=sdc30  size=  67108864 magic=414e44524f494421  md5=e1856d62a397d1985e870567cb6f0862  sha256=eafa5f4f4c81327d84507ac2cd8c6eae2470ccf6db209c08bf416b6c0048c518
+vbmeta_a             dev=sdc8   size=   8388608 magic=4156423000000001  md5=96d0ca958c138b0d4bf5eb52fe4f78e8  sha256=b461db91e6fbcf65e85a26d6a2a3533f23f91cdb683ffda6a9ad4a80c138a278
+vbmeta_system_a      dev=sdc9   size=   8388608 magic=4156423000000001  md5=d59d09e052d39deedf3766e12d215707  sha256=209b8a032afb65cb31421070539a416706a51c2195d1fad737af32e730e4aef0
+vbmeta_vendor_a      dev=sdc10  size=   8388608 magic=4156423000000001  md5=5d83e68f2cbef85f7ffe6bce4cbd9ebf  sha256=6629c976cb88dbcc231e6aa98b72f1e364fd34dc4277ddd5bb2eba9d8efc0549
+dtbo_a               dev=sdc32  size=   8388608 magic=d7b7ab1e00024078  md5=a01d21dbbcfcc2e4fbd68566dfaf64b9  sha256=07a695745dc7e684c984af771b7e6a7662f9108a5e3f63e6f82d7cbfaf8225b4
+vendor_boot_a        dev=sdc31  size=  67108864 magic=0000000000000000  md5=7f614da9329cd3aebf59b91aadc30bf0  sha256=3b6a07d0d404fab4e23b6d34bc6696a6a312dd92821332385e5af7c01c421351
+
+boot_b base64 cross-check: MATCH
+files: <name>-before.img in this directory
+state snapshot: device-state-before.txt
+
+RESULT: 12/12 partitions verified, nothing failed.
+
+REMINDER: this backup is READ-ONLY evidence. Flashing anything back
+is a WRITE to the phone and still requires explicit user authorization.

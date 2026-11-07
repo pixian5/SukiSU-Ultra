@@ -1,0 +1,38 @@
+Boot image generation check (read-only analysis, 2026-11-07 09:05)
+==================================================================
+
+Two generations are mixed in this backup area. Do NOT treat them as
+interchangeable when flashing the current slot.
+
+GEN-A  (kernel 4.14.186-perf-ga368196f0bd0, built 2023-03-10)
+  ../magisk_patched-28103_liPdl.img   67108864  md5 9558b6b495ef865543578a1f2dabec0b
+      user-provided, Magisk 28103 patched, ramdisk 21246610, magisk marker yes
+  ../redminote10boot.img              67108864  md5 2e2d9ae13d35c2b5476a244d09225353
+      user-provided, factory,          ramdisk 21078341, magisk marker no
+  boot_a-before.img                   67108864  md5 e1856d62a397d1985e870567cb6f0862
+      read back from the phone's OTHER slot (a), ramdisk 21285171
+  => matches the OTHER slot's generation, NOT the current b slot.
+
+GEN-B  (kernel 4.14.186-perf-gf8d872e9279c, built 2023-09-14, V14.0.4.0.TKSEUXM)
+  boot_b-before.img                   67108864  md5 531c534bcc8d3172e03b12a2f6dd135d
+      read back from the CURRENT slot (b), EXACT restore image,
+      sha256 b9d982969d4e4d6dad9a0ebb9e46b9b5118a48ef19a576658cb63f4ade347513
+  factory boot.img (cloud box, NOT yet copied here)
+                                      67108864  md5 f8e4f42a4538b03c519bb70921d88bcc
+      same generation as the current slot; the correct "clean factory" rollback
+
+HOW TO TELL (do not judge by filename or ramdisk size)
+  kernel version string + build time inside the gzipped kernel.
+  Ramdisk sizes can look almost identical across generations
+  (21246610 vs 21246673) while the kernels are completely different.
+
+ROLLBACK CHOICE
+  1st  boot_b-before.img            exact restore of the current slot (keeps Magisk)
+  2nd  factory boot.img of GEN-B    clean factory rollback, loses root
+  last redminote10boot.img / magisk_patched-28103_liPdl.img (GEN-A)
+       only as a cross-generation emergency image; unverified combination.
+
+Nothing here was flashed. The phone stays read-only until the user
+explicitly authorizes flashing.
+
+See docs/20261107-0905-启动镜像版本核对与回退件定位-Claude-Opus-6.md
