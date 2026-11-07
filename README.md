@@ -10,11 +10,12 @@
 
 真机 root **已可用并验证通过**：自编 4.14 内核刷入 `boot_b` 后正常开机，管理器显示「工作中」，授权成功；12 个分区只读备份与精确回退件均已就位。
 
-本轮（2026-11-08）做了三件事：
+本轮（2026-11-08）做了四件事：
 
 1. 把两处关键授权修复固化进仓库（厂商内核 `kernel/reboot.c` 钩子、模块侧 `dispatch.c` 默认 profile 回退），并接入 `integrate.py` 第 8、9 步；
 2. **把 SuSFS 接入 4.14 内核并完整编译通过**：上游 v1.5.5 的 4.14 原生核心 + 自写 v2.3.0 ABI 翻译层。这在 [tools/camellian-susfs](tools/camellian-susfs/) 里，配套一键接入与校验脚本。
 3. **用出厂配置 + LTO/CFI 打出可刷镜像**：`dist/boot-sukisu-susfs-lto-stockdtb.img`，67,108,864 字节，MD5 `322fd6381c8b6d546b0298fbd1b7736f`，10/10 结构校验通过。内核 `4.14.186-perf-gf4e416aea-dirty`，52 个 susfs 符号，版本串 `v2.3.0`。已发布到 [Release camellian-susfs-v0.0.4](https://github.com/pixian5/SukiSU-Ultra/releases/tag/camellian-susfs-v0.0.4)（pre-release，含 SHA256SUMS）。
+4. **按交接文档改用 vanilla SuSFS 1.4.2 重编**：执行中发现交接文档的关键判断有误（1.4.2 不含 SukiSU 扩展 UAPI），因此在其核心上自研 4.14 兼容层。新镜像 67,108,864 字节，MD5 `95352fe103f84e1fe07e4d5a2633d461`，12/12 结构校验通过，311 个 `ksu_`/`susfs_` 符号，版本串 `1.4.2` / `NON-GKI`。已发布到 [Release camellian-susfs-v0.0.5](https://github.com/pixian5/SukiSU-Ultra/releases/tag/camellian-susfs-v0.0.5)（pre-release，含 SHA256SUMS），详见 [编译完成记录](docs/20261108-0350-SuSFS隐藏方案编译完成记录-Kimi-K3.md)。
 
 > 注意：镜像已可刷入，但**尚未在真机上验证**；刷机需你明确授权并执行，回退件 `boot_b-before.img` 仍在。
 
@@ -22,7 +23,7 @@
 
 ## 【下一步待实现】
 
-1. **刷机并真机验证**：`fastboot flash boot_b dist/boot-sukisu-susfs-lto-stockdtb.img` → 确认管理器「工作中」、`susfs is initialized! version: v2.3.0`、`ksud susfs status`，再用 Momo 复测隐藏效果；
+1. **刷机并真机验证**：刷入 `camellian-susfs-v0.0.5` 的 `boot-sukisu-susfs-lto-stockdtb.img`（fastboot 写 `boot_b`）→ 确认管理器「工作中」、内核日志 `susfs is initialized! version: 1.4.2`、`ksud susfs status` 显示 `1.4.2 / NON-GKI`，再用 Momo 复测隐藏效果；
 2. **复现闭环**：按新补丁重建内核，与当前 `final3` 镜像对比校验值或给出功能等价证据；
 3. **资产安全**：给回退件与可用镜像做异地备份；
 4. **仓库同步**：合并上游 7 个提交；
