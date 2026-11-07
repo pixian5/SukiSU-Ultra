@@ -3,6 +3,16 @@
 
 > Current branch: `main` (active development) · Forked from KernelSU, independently maintained
 
+> **Repository and handoff documents (2026-11-08)**
+>
+> - This fork (**contains** the handoff docs and patches): `https://github.com/pixian5/SukiSU-Ultra`
+> - GitCode mirror: `https://gitcode.com/laotongtian/SukiSU-Ultra`
+> - The upstream repo `SukiSU-Ultra/SukiSU-Ultra` does **not** contain them — cloning upstream is why the handoff document appears "missing"
+> - SuSFS handoff: [20261108-0135-SuSFS隐藏方案编译交接文档](./20261108-0135-SuSFS隐藏方案编译交接文档-Claude-Opus-6.md) on `main`
+> - Patches: `tools/camellian-susfs/patches/`; credentials are provided separately and are **not** in the repo
+> - If missing: check `git remote -v` points to this fork, then `git pull origin main`
+
+
 **English** | [简体中文](./zh/README.md)
 
 A kernel-based root solution for Android devices, forked from [`tiann/KernelSU`](https://github.com/tiann/KernelSU), with some interesting changes added.

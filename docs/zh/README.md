@@ -3,6 +3,16 @@
 
 > 当前分支：`main`（活跃开发中）· 基于 KernelSU 分叉，独立演进
 
+> **仓库与交接文档位置（2026-11-08）**
+>
+> - 本仓库（个人 fork，**含**本项目的交接文档与补丁）：`https://github.com/pixian5/SukiSU-Ultra`
+> - GitCode 镜像：`https://gitcode.com/laotongtian/SukiSU-Ultra`
+> - 上游官方仓库 `SukiSU-Ultra/SukiSU-Ultra` **不包含**这些文档，clone 错地方就会「找不到交接文档」
+> - SuSFS 编译交接文档：[20261108-0135-SuSFS隐藏方案编译交接文档](../20261108-0135-SuSFS隐藏方案编译交接文档-Claude-Opus-6.md)（`main` 分支）
+> - 补丁目录：`tools/camellian-susfs/patches/`；凭证单独提供，**不在仓库内**
+> - 找不到时：先 `git remote -v` 确认指向本 fork，再 `git pull origin main`
+
+
 **简体中文** [English](../README.md) | 
 
 一个 Android 上基于内核的 root 方案，由 [`tiann/KernelSU`](https://github.com/tiann/KernelSU) 分叉而来，添加了一些有趣的变更。
