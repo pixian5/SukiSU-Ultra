@@ -87,6 +87,7 @@
 - [SUSFS v2.3.0 移植与编译验证](../20261108-0210-SUSFS-v2.3.0移植与编译验证-DeepSeek-V4.1-Flash.md)：把 SuSFS 接到 4.14 手动挂钩内核——上游 v1.5.5 的 4.14 核心 + v2.3.0 ABI 翻译层。记录四处 SukiSU 侧修复（5.x 专属 sucompat 分支、缺 setresuid 钩子、缺 `strncpy_from_user_nofault`、adb_root 签名）、三个厂商树编译阻塞、沙箱内完整编译结果（`Image.gz` 11,508,451 字节、51 个 susfs 符号、v2.3.0 字符串）、逐项能力边界，以及为什么这份产物只能算编译验证、不能刷机。
 - [SUSFS 可刷 boot 镜像构建与产物](../20261108-0250-SUSFS可刷镜像构建与产物-DeepSeek-V4.1-Flash.md)：真正打出可刷镜像。从用户上传的原厂 `boot-stock.img` 提取出厂 `ikconfig`，打开 KSU/SuSFS，保留量产 LTO/CFI，用原厂内存盘/DTB 重打包，10/10 结构校验通过。给出产物校验值（67,108,864 字节，MD5 `322fd638...`，SHA256 `c3c2c6d7...`）、内核版本串、刷机与回退命令、刷后验证判据，以及剩余风险（尚未真机验证、KPM/MIHW 关闭、sus_map/avc/priority 不生效）。
 - [SuSFS 可刷镜像的修改建议](../20261108-0335-SuSFS镜像修改建议-Claude-Opus-6.md)：对 `camellian-susfs-v0.0.4` 的具体修改建议——三个 SuSFS 命令（`sus_map`、`avc_log_spoofing`、`priority_uid_filter`）在 ABI 层注册了但内核无实现，管理器显示「支持」却实际无效，要么明确返回「不支持」要么补钩子；`sus_path_loop` 退化为一次性；`KALLSYMS_ALL` 暴露全部符号；`MIHW` 因缺厂商模块被关闭；版本号 0.0.5 与 v0.0.4 不一致；附分阶段计划与真机验证清单。
+- [SuSFS 1.4.2 编译完成记录](../20261108-0350-SuSFS隐藏方案编译完成记录-Kimi-K3.md)：按交接文档完整执行并纠正其核心错误——vanilla `1.4.2-kernel-4.14` 并不含 SukiSU 扩展 UAPI（签名、结构体布局均不兼容），因此在 vanilla 4.14 核心上自建兼容层（GKI 式 `void fn(void __user **)` 入口、带 `err`/`flags` 的结构体、12 个 `KSTAT_SPOOF_*` 标志、AVD 哈希）。记录十个构建环境坑、符号与字符串复核（311 个 `ksu_`/`susfs_` 符号、`1.4.2` 与 `NON-GKI` 串、preinit runner 已编入）、打包 12/12 校验、Release 发布信息与遗留 stub 清单。
 
 ## KPM 支持
 
