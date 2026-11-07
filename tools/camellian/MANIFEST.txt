@@ -61,3 +61,27 @@ OPTIONAL-FEATURES BUNDLE (added 2026-11-07 08:04)
   KPM switch brings no real capability. See
   docs/20261107-0804-可选隐藏特性补齐与再次重编-Claude-Opus-6.md section 6.
   Neither image has been flashed. Phone stays read-only.
+
+READ-ONLY PARTITION BACKUP (added 2026-11-07 08:52)
+  Script : scripts/backup_partitions_readonly.py (runs on the local Mac,
+           NOT on the cloud box).
+  Output : /Users/x/camellian-flash/ -- 12 *-before.img files plus
+           BACKUP-MANIFEST.txt and device-state-before.txt. Not tracked by git.
+  Scope  : separately authorized by the user as a READ-ONLY backup. This is
+           NOT a flashing authorization. Phone stays zero-write.
+  PITFALL: adb exec-out on this device is not binary-clean -- it rewrites
+           every 0x0A byte as 0x0D 0x0A. A plain dd redirect therefore yields
+           an inflated, corrupted image (boot_b gained 105890 bytes and its
+           trailing AVB footer was displaced). The earlier "trim the tail"
+           idea was WRONG and those copies were deleted.
+  FIX    : the script reverses CRLF->LF (the exact inverse), REJECTS any file
+           whose length differs from the kernel-reported partition size, reads
+           every partition twice, and cross-checks boot_b via phone-side base64.
+  RESULT : 12/12 verified, boot_b base64 cross-check MATCH.
+  boot_b-before.img  67108864
+    md5    531c534bcc8d3172e03b12a2f6dd135d
+    sha256 b9d982969d4e4d6dad9a0ebb9e46b9b5118a48ef19a576658cb63f4ade347513
+  Proven Magisk-patched: kernel_size matches factory (13342418) while ramdisk
+    grew 21078370 -> 21246673, magisk marker found after gzip decompress.
+  docs/20261107-0029 section 6.2 backup command was corrected accordingly.
+  See docs/20261107-0852-手机分区只读备份与传输污染排查-Claude-Opus-6.md.
