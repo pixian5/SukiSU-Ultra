@@ -31,6 +31,27 @@ static int susfs_copy_in(void __user **user_info, void *dst, size_t size)
 	return copy_from_user(dst, *user_info, size) ? -EFAULT : 0;
 }
 
+/*
+ * 明确拒绝一条本移植没有内核实现的命令。
+ *
+ * 这些 v2.3.0 命令的结构体最后一个字段固定是 int err，直接把
+ * -EOPNOTSUPP 写到该偏移即可，不需要整结构体拷入。用户态 ksud 会把
+ * 非 0 / 非 126 的 err 当成失败上报，管理器因此会明确显示命令失败，
+ * 而不是「看起来成功、实际什么都没做」。
+ *
+ * 注意：126（ERR_CMD_NOT_SUPPORTED）在本 ABI 里被 ksud 当成「可忽略的
+ * 不支持」静默放行，正是要避免的假支持，所以这里用 -95。
+ */
+static void susfs_reject_cmd(void __user **user_info, size_t size, const char *name)
+{
+	int err = -EOPNOTSUPP;
+
+	if (user_info && *user_info && size >= sizeof(err))
+		(void)copy_to_user((char __user *)(*user_info) + size - sizeof(err),
+				   &err, sizeof(err));
+	pr_info("susfs: %s is not supported by this 4.14 port (err=%d)\n", name, err);
+}
+
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 void susfs_add_sus_path(void __user **user_info)
 {
@@ -46,19 +67,11 @@ void susfs_add_sus_path(void __user **user_info)
 
 /*
  * v2 的 loop 版本会周期性重新扫描目录，把新出现的文件继续隐藏。
- * 4.19 侧做成一次性递归添加，深度上限 6。
+ * 本移植没有实现循环重扫，明确返回不支持，避免静默退化成一次性添加。
  */
 void susfs_add_sus_path_loop(void __user **user_info)
 {
-	struct st_susfs_sus_path info;
-
-	if (susfs_copy_in(user_info, &info, sizeof(info)))
-		return;
-	info.target_pathname[SUSFS_MAX_LEN_PATHNAME - 1] = '\0';
-	if (!info.target_pathname[0])
-		return;
-	susfs_core_add_sus_path(&info);
-	SUSFS_LOGI("sus_path_loop: '%s' added (one-shot)\n", info.target_pathname);
+	susfs_reject_cmd(user_info, sizeof(struct st_susfs_sus_path), "add_sus_path_loop");
 }
 #endif
 
@@ -159,27 +172,13 @@ void susfs_add_open_redirect(void __user **user_info)
 #endif
 
 #ifdef CONFIG_KSU_SUSFS_SUS_MAP
+/*
+ * 本移植只在 inode 上打标记，没有任何过滤 /proc/<pid>/maps 的钩子，
+ * 加进去也不会真正隐藏映射。明确返回不支持，避免误导。
+ */
 void susfs_add_sus_map(void __user **user_info)
 {
-	struct st_susfs_sus_map info;
-	struct path p;
-	struct inode *inode;
-
-	if (susfs_copy_in(user_info, &info, sizeof(info)))
-		return;
-	info.target_pathname[SUSFS_MAX_LEN_PATHNAME - 1] = '\0';
-	if (!info.target_pathname[0])
-		return;
-	if (kern_path(info.target_pathname, LOOKUP_FOLLOW, &p))
-		return;
-	inode = d_inode(p.dentry);
-	if (inode) {
-		spin_lock(&inode->i_lock);
-		inode->i_state |= INODE_STATE_SUS_MAP;
-		spin_unlock(&inode->i_lock);
-	}
-	path_put(&p);
-	SUSFS_LOGI("sus_map: '%s' added\n", info.target_pathname);
+	susfs_reject_cmd(user_info, sizeof(struct st_susfs_sus_map), "add_sus_map");
 }
 
 bool susfs_is_inode_sus_map(struct inode *inode)
@@ -190,51 +189,32 @@ bool susfs_is_inode_sus_map(struct inode *inode)
 }
 #endif
 
-/* getpriority uid 过滤：4.19 侧仅记录，不拦截 */
-static unsigned long susfs_priority_uid_bitmap[SUSFS_PRIORITY_UID_FILTER_BITMAP_LEN];
-
+/* getpriority uid 过滤：本移植没有实现，明确返回不支持 */
 void susfs_set_priority_uid_filter(void __user **user_info)
 {
-	struct st_susfs_priority_uid_filter *info;
-
-	info = kzalloc(sizeof(*info), GFP_KERNEL);
-	if (!info)
-		return;
-	if (susfs_copy_in(user_info, info, sizeof(*info))) {
-		kfree(info);
-		return;
-	}
-	SUSFS_LOGI("priority_uid_filter: %s\n", info->app_strings);
-	kfree(info);
+	susfs_reject_cmd(user_info, sizeof(struct st_susfs_priority_uid_filter),
+			 "set_priority_uid_filter");
 }
 
 bool susfs_is_priority_uid_filtered(uid_t uid)
 {
-	if (uid < SUSFS_PRIORITY_UID_FILTER_MIN_UID ||
-	    uid > SUSFS_PRIORITY_UID_FILTER_MAX_UID)
-		return false;
-	return test_bit(uid - SUSFS_PRIORITY_UID_FILTER_MIN_UID, susfs_priority_uid_bitmap);
+	return false;
 }
 
 void susfs_parse_priority_app_strings(void)
 {
 }
 
-bool susfs_avc_log_spoofing_enabled __read_mostly = false;
-
+/* AVC 日志伪装：没有 security/selinux 侧钩子，明确返回不支持 */
 void susfs_set_avc_log_spoofing(void __user **user_info)
 {
-	struct st_susfs_avc_log_spoofing info;
-
-	if (susfs_copy_in(user_info, &info, sizeof(info)))
-		return;
-	susfs_avc_log_spoofing_enabled = info.enabled;
-	SUSFS_LOGI("avc_log_spoofing: %d\n", info.enabled);
+	susfs_reject_cmd(user_info, sizeof(struct st_susfs_avc_log_spoofing),
+			 "set_avc_log_spoofing");
 }
 
 bool susfs_is_avc_log_spoofing_enabled(void)
 {
-	return susfs_avc_log_spoofing_enabled;
+	return false;
 }
 
 void susfs_show_version(void __user **user_info)
@@ -302,9 +282,8 @@ void susfs_get_enabled_features(void __user **user_info)
 #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 	SUSFS_FEATURE_APPEND("CONFIG_KSU_SUSFS_OPEN_REDIRECT");
 #endif
-#ifdef CONFIG_KSU_SUSFS_SUS_MAP
-	SUSFS_FEATURE_APPEND("CONFIG_KSU_SUSFS_SUS_MAP");
-#endif
+	/* 不申报 CONFIG_KSU_SUSFS_SUS_MAP：命令已明确返回不支持，
+	 * 若继续出现在特性列表里，管理器会误以为该功能可用。 */
 	(void)left;
 
 	info->err = 0;

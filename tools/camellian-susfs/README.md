@@ -74,14 +74,18 @@ cat tools/camellian-susfs/config/susfs-4.14-config.txt >> <defconfig 或 .config
 | open_redirect | 可用 | |
 | enable_log | 可用 | |
 | hide ksu/susfs symbols | 可用 | 需要 CONFIG_KALLSYMS_ALL |
-| sus_path_loop | **部分** | 退化为一次性添加，不周期重扫 |
-| sus_map | **登记但不生效** | 只标记 inode，没有过滤 `/proc/pid/maps` 的钩子 |
-| avc_log_spoofing | **开关但不生效** | 没有 security/selinux/avc.c 钩子 |
-| priority_uid_filter | **记录但不生效** | 只打印，未参与 getpriority 判定 |
+| sus_path_loop | **不支持** | ABI 明确返回 `-EOPNOTSUPP`，管理器会显示命令失败；不再静默退化成一次性添加 |
+| sus_map | **不支持** | 无过滤 `/proc/pid/maps` 的钩子；ABI 返回 `-EOPNOTSUPP`，且不再出现在启用特性列表 |
+| avc_log_spoofing | **不支持** | 无 security/selinux 侧钩子；ABI 返回 `-EOPNOTSUPP` |
+| priority_uid_filter | **不支持** | 没有实现 getpriority 过滤；ABI 返回 `-EOPNOTSUPP` |
 | try_umount | 未启用 | v1.5.5 的可选特性，需要额外 KSU 支撑 |
 | KPM | 不可用 | 与 SUSFS 无关，4.14 缺 KernelPatch 钩子 |
 
-管理器里 `sus_map` / `avc_log_spoofing` / `priority_uid_filter` 可能显示为「支持」，因为 ABI 层注册了命令；**实际不产生隐藏效果**，不要据此判断隐蔽性。
+> **关于「不支持」的语义**：这四条命令仍保留入口（内核 ABI 需要符号存在），但一进来就写入
+> `-EOPNOTSUPP`，不做任何实际动作。用户态 `ksud` 会把非 0 / 非 126 的 `err` 当成失败上报，
+> 所以管理器里这些操作会明确报错，而不是显示成功。
+> `sus_map` 同时从 `susfs_get_enabled_features()` 的返回里移除，特性页不会再把它标为启用。
+> 这是刻意的取舍：宁可功能少，也不让用户误以为隐藏已经生效。
 
 ## 验证状态
 
