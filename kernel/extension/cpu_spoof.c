@@ -1,3 +1,14 @@
+// SukiSU-Ultra 4.14 GUARD
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
+/* SukiSU-Ultra：4.14 内核缺少 vdso/clocksource.h 等时钟模式定义，
+ * CPU 身份伪装的 vDSO 改写无法在旧内核编译；这里禁用该扩展，
+ * 保留函数符号以免 extension.c 注册时链接断链。 */
+#include <linux/errno.h>
+int ksu_extension_cpu_spoof_io(u32 id, void __user *raw)
+{
+    return -EOPNOTSUPP;
+}
+#else
 // SPDX-License-Identifier: GPL-2.0
 /*
  * CPU spoof extension. io-only: ops = NULL, no sticky enable bit.
@@ -236,3 +247,5 @@ int ksu_extension_cpu_spoof_io(u32 id, void __user *raw)
 
     return set_spoof_cpu(&cmd);
 }
+
+#endif /* SukiSU-Ultra 4.14 GUARD */

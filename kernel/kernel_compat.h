@@ -54,6 +54,21 @@ struct file *ksu_filp_open_compat(const char *filename, int flags, umode_t mode)
 #define ksu_access_ok(addr, size) access_ok(VERIFY_READ, addr, size)
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+/* SukiSU-Ultra：4.14 内核有 kvzalloc 但没有 kvcalloc，这里补一个等价实现 */
+#define kvcalloc(n, size, flags) kvzalloc((n) * (size), (flags))
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
+/*
+ * SukiSU-Ultra：strncpy_from_user_nofault() 是 5.8 才引入的。
+ * 4.14 的 sulog 只在 SUSFS 模式下用到它，调用点在进程上下文，
+ * 用 strncpy_from_user() 代替（失败返回 -EFAULT，语义一致）。
+ */
+#include <linux/uaccess.h>
+#define strncpy_from_user_nofault(dst, src, count) strncpy_from_user((dst), (src), (count))
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0) // caller is reponsible for sanity!
 static inline void ksu_zeroed_strncpy(char *dest, const char *src, size_t count)
 {

@@ -73,7 +73,10 @@
 #include <linux/vmalloc.h>
 #include <linux/tty.h>
 #include <linux/kref.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+/* SukiSU-Ultra：static_call 是 5.10 以后才引入的机制，4.14 内核跳过 */
 #include <linux/static_call.h>
+#endif
 #include "arch.h"
 #ifdef CONFIG_KSU_SUSFS
 #include <linux/susfs.h>

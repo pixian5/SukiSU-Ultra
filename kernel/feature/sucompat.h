@@ -2,10 +2,12 @@
 #define __KSU_H_SUCOMPAT
 #include <asm/ptrace.h>
 #include <linux/types.h>
+#include <linux/version.h>
 
 extern bool ksu_su_compat_enabled;
 
-#ifdef CONFIG_KSU_SUSFS
+/* 5.0+ 的 SUSFS 版钩子按 struct filename 取值；4.x 仍按用户路径字符串处理 */
+#if defined(CONFIG_KSU_SUSFS) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 int ksu_handle_faccessat(int *dfd, struct filename **filename, int *mode, int *__unused_flags);
 int ksu_handle_stat(int *dfd, struct filename **filename, int *flags);
 int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,

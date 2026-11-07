@@ -39,7 +39,13 @@ static char __user *ksud_user_path(void)
 }
 
 
-#ifdef CONFIG_KSU_SUSFS
+/*
+ * 下面的 SUSFS 版实现是给 5.x 写的：钩子拿到的是 struct filename *，
+ * 直接按 (*filename)->name 取值。4.14/4.19 的 vfs_statx()/faccessat()
+ * 传的是 const char __user *，一旦按 5.x 解释就会把用户字符串当指针
+ * 解引用（开机 1 秒内 data abort）。因此这里必须同时要求 >= 5.0。
+ */
+#if defined(CONFIG_KSU_SUSFS) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 /*
  * return 0 -> No further checks should be required afterwards
  * return non-zero -> Further checks should be continued afterwards
@@ -303,8 +309,14 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user, void 
     if (!is_su_allowed(filename_user))
         return 0;
 
-    pending_root_execve =
-        ksu_sulog_capture_sucompat(*filename_user, *((struct user_arg_ptr *)argv), GFP_KERNEL);
+    /* SUSFS 版 sulog 需要内核态文件名字符串，先拷一份；
+     * 避免把 __user 指针当内核指针直接解引用。 */
+    {
+        char su_name[64] = {0};
+        if (strncpy_from_user(su_name, *filename_user, sizeof(su_name) - 1) > 0)
+            pending_root_execve =
+                ksu_sulog_capture_sucompat(su_name, (struct user_arg_ptr *)argv, GFP_KERNEL);
+    }
 
     ret = ksu_sucompat_user_common(filename_user, "sys_execve", true);
     ksu_sulog_emit_pending(pending_root_execve, ret, GFP_KERNEL);
@@ -324,7 +336,7 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr, void *
         return 0;
 
     pending_root_execve =
-        ksu_sulog_capture_sucompat((*filename_ptr)->name, *((struct user_arg_ptr *)argv), GFP_KERNEL);
+        ksu_sulog_capture_sucompat((*filename_ptr)->name, (struct user_arg_ptr *)argv, GFP_KERNEL);
 
     ret = escape_with_root_profile();
     ksu_sulog_emit_pending(pending_root_execve, ret, GFP_KERNEL);
@@ -353,7 +365,15 @@ int ksu_handle_execveat(int *fd, struct filename **filename_ptr, void *argv, voi
 #ifdef CONFIG_KSU_FEATURE_ADBROOT
     int ret = 0;
     if (current_uid().val != 1 && is_init(get_current_cred())) {
+#ifdef CONFIG_KSU_SUSFS
+        /* SUSFS 版 adb_root 入口按 5.x 语义接收 envp 指针的位置，
+         * 4.14 手动挂钩里 envp 是 struct user_arg_ptr，取 ptr.native 的地址即可。 */
+        extern long ksu_adb_root_handle_execveat(const char *filename, void ***envp_user_ptr);
+        ret = ksu_adb_root_handle_execveat((*filename_ptr)->name,
+                                           (void ***)&((struct user_arg_ptr *)envp)->ptr.native);
+#else
         ret = ksu_adb_root_handle_execve_manual((*filename_ptr)->name, (struct user_arg_ptr *)envp);
+#endif
         if (ret) {
             pr_err("adb root failed: %d\n", (int)ret);
         }
