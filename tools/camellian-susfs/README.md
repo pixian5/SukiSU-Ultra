@@ -28,15 +28,26 @@ SukiSU 侧另有三处 4.14 适配（见 `patches/` 与仓库 `kernel/` 的提�
 ```
 tools/camellian-susfs/
 ├── README.md
+├── VERSION
 ├── config/susfs-4.14-config.txt     需要开启的 CONFIG
 ├── kernel/                          要覆盖进内核树的文件
 │   ├── fs/susfs.c                   v1.5.5 4.14 核心（改造版）
 │   ├── fs/susfs_abi.c               v2.3.0 ABI 翻译层
 │   └── include/linux/susfs.h
 │       include/linux/susfs_def.h
-├── patches/50_add_susfs_in_kernel-4.14.patch   上游 v1.5.5 补丁（原样）
-└── scripts/integrate-susfs.py       一键接入脚本（幂等）
+├── patches/
+│   ├── 50_add_susfs_in_kernel-4.14.patch   上游 v1.5.5 补丁（原样）
+│   ├── 10_sukisu-4.14-susfs.patch          SukiSU 侧 4.14 适配（本次，含 SUSFS 修复）
+│   ├── camellian-integration.patch         早期交接骨架：仅 KSU 接入，不含 SUSFS 本体
+│   └── sukisu-integration.patch            早期交接骨架：SukiSU 4.14 兼容（被 10_ 覆盖）
+└── scripts/
+    ├── integrate-susfs.py           一键接入（幂等）
+    ├── build-verify.sh              编译验证命令
+    └── verify-symbols.sh            产物符号校验
 ```
+
+> 两处 `*-integration.patch` 是并行会话产出的交接骨架，只解决「KSU 能在 4.14 编译」；
+> **真正让 SUSFS 可用的是 `50_` + `10_` + `kernel/` 文件**。两组不要叠加应用，避免重复。
 
 ## 使用
 
