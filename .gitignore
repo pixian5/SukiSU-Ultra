@@ -20,3 +20,18 @@ __pycache__
 /backup/**/*.apk
 /backup/**/*.tgz
 /backup/**/*.tar.gz
+
+# Kernel build workspace. Never commit: nested clones, object tree, ROM dumps, logs.
+/camellian-kernel/
+/SukiSU-Ultra/
+/susfs4ksu/
+/susfs4ksu-master/
+/susfs4ksu-shirk/
+/aosp/
+/vendor/
+/out/
+/rom/
+/rom.tgz
+/camellian_eea_global_images_*/
+/build-susfs.log
+/build-susfs.rc
