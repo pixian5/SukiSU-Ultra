@@ -90,11 +90,13 @@ cat tools/camellian-susfs/config/susfs-4.14-config.txt >> <defconfig 或 .config
 ## 验证状态
 
 - 编译验证（2026-11-08）：x86_64 Linux 沙箱，AOSP clang-r383902 完整编译通过。
-- 可刷镜像（2026-11-08）：用**出厂 ikconfig + LTO/CFI** 编译，装回原厂内存盘/DTB，10/10 结构校验通过。
+- v0.0.6（2026-11-08）：四条未实现命令改为明确 `-EOPNOTSUPP`，重新用出厂配置 + LTO/CFI 编译并打包。
   - `dist/boot-sukisu-susfs-lto-stockdtb.img` 67,108,864 字节
-  - MD5 `322fd6381c8b6d546b0298fbd1b7736f`
-  - SHA256 `c3c2c6d75382ed06ebcbbd3dd9bbbf8dc234410860fa47de99b122ec98a44760`
-  - 内核 `4.14.186-perf-gf4e416aea-dirty`，52 个 `susfs_` 符号
+  - MD5 `3248b6a178b2aa91e423d95feab292ad`
+  - SHA256 `02d4aecb764d798987ae680daa5274c400f3c504fb8451458e3bb749a4438fd3`
+  - 内核 `4.14.186-perf-gf4e416aea-dirty`，53 个 `susfs_` 符号
+  - 结构 10/10 校验通过
+- v0.0.4（历史版本，已被 v0.0.6 取代）：MD5 `322fd6381c8b6d546b0298fbd1b7736f`。
 - 真机验证：**未刷入**。刷机需要用户明确授权，且会写 `boot_b`。
 - 本包不改变启动镜像打包流程；`bootimg.py` 与既有 `pack_boot.py` 的布局假设一致。
 
