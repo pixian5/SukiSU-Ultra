@@ -1,0 +1,277 @@
+diff --git a/kernel/extension/cpu_spoof.c b/kernel/extension/cpu_spoof.c
+index 0007c2fd..098afaa6 100644
+--- a/kernel/extension/cpu_spoof.c
++++ b/kernel/extension/cpu_spoof.c
+@@ -1,3 +1,94 @@
++// SukiSU-Ultra: Linux 4.14 (MediaTek camellian) CPU spoof port.
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
++/*
++ * Implemented for real on 4.14 arm64 (all three symbols exist in vmlinux):
++ *   cpu_data[].reg_midr  - per-CPU Main ID Register
++ *   loops_per_jiffy      - BogoMIPS
++ *   elf_hwcap            - ELF hardware capability bitmap
++ * Deliberately NOT faked, because 4.14 simply does not have the mechanism:
++ *   vdso/clocksource.h, enum vdso_clock_mode, VDSO_CLOCKMODE_ARCHTIMER,
++ *   struct vdso_time_data, struct clocksource.vdso_clock_mode,
++ *   the vdso_default symbol, and a 64-bit elf_hwcap2.
++ * 4.14 struct vdso_data (asm/vdso_datapage.h) has no clock_mode field at all.
++ * Reporting "supported" with no writes behind it would be misleading, so the
++ * io handler returns the real result of the writes it can actually perform.
++ */
++#include <linux/kernel.h>
++#include <linux/types.h>
++#include <linux/cpumask.h>
++#include <linux/percpu.h>
++#include <linux/jiffies.h>
++#include <linux/errno.h>
++#include <linux/uaccess.h>
++#include <linux/version.h>
++#include <asm/cpu.h>
++#include <asm/hwcap.h>
++
++static int set_spoof_cpu(const struct ksu_set_spoof_cpu_cmd *cmd)
++{
++    int missing = 0;
++
++    if (!cmd)
++        return -EINVAL;
++    if (cmd->cpu_index >= num_possible_cpus()) {
++        pr_warn("ksu: set_spoof_cpu out-of-bounds cpu_index %u\n", cmd->cpu_index);
++        return -EINVAL;
++    }
++
++    {
++        unsigned long cpu_data_base = find_kernel_symbol_exact("cpu_data");
++        if (cpu_data_base) {
++            struct cpuinfo_arm64 *info = per_cpu_ptr(
++                (struct cpuinfo_arm64 *)cpu_data_base, cmd->cpu_index);
++            if (info)
++                info->reg_midr = cmd->midr;
++            else
++                ++missing;
++        } else {
++            pr_warn("ksu: set_spoof_cpu failed to resolve 'cpu_data'\n");
++            ++missing;
++        }
++    }
++
++    if (cmd->cpu_index == 0) {
++        unsigned long *lpj =
++            (unsigned long *)find_kernel_symbol_exact("loops_per_jiffy");
++        if (lpj)
++            *lpj = ((unsigned long)cmd->bogomips * 500000UL) / (100UL * HZ);
++        else
++            ++missing;
++
++        unsigned long *hwcap =
++            (unsigned long *)find_kernel_symbol_exact("elf_hwcap");
++        if (hwcap)
++            *hwcap = (unsigned long)cmd->hwcap;
++        else
++            ++missing;
++    }
++
++    if (missing) {
++        pr_warn("ksu: set_spoof_cpu for cpu %u incomplete (%d symbol(s) unresolved)\n",
++                cmd->cpu_index, missing);
++        return -ENXIO;
++    }
++
++    pr_info("ksu: CPU %u identity spoofed (MIDR 0x%08x, 4.14 partial: no vDSO/hwcap2 rewrite)\n",
++            cmd->cpu_index, cmd->midr);
++    return 0;
++}
++
++int ksu_extension_cpu_spoof_io(u32 id, void __user *raw)
++{
++    struct ksu_set_spoof_cpu_cmd cmd;
++
++    if (!raw)
++        return -EFAULT;
++    if (copy_from_user(&cmd, raw, sizeof(cmd)))
++        return -EFAULT;
++
++    return set_spoof_cpu(&cmd);
++}
++#else
+ // SPDX-License-Identifier: GPL-2.0
+ /*
+  * CPU spoof extension. io-only: ops = NULL, no sticky enable bit.
+@@ -236,3 +327,5 @@ int ksu_extension_cpu_spoof_io(u32 id, void __user *raw)
+ 
+     return set_spoof_cpu(&cmd);
+ }
++
++#endif /* SukiSU-Ultra 4.14 GUARD */
+diff --git a/kernel/extension/kpm/kpm.c b/kernel/extension/kpm/kpm.c
+index 5735c2d3..b7debdf4 100644
+--- a/kernel/extension/kpm/kpm.c
++++ b/kernel/extension/kpm/kpm.c
+@@ -179,7 +179,7 @@ int do_kpm(void __user *arg)
+     int result;
+     /* Called only through the manager_or_root-authorized extension ioctl. */
+     if (copy_from_user(&cmd, arg, sizeof(cmd))) return -EFAULT;
+-    if (!access_ok(u64_to_user_ptr(cmd.result_code), sizeof(result))) return -EFAULT;
++    if (!ksu_access_ok(u64_to_user_ptr(cmd.result_code), sizeof(result))) return -EFAULT;
+     result = handle_kpm(&cmd);
+     return copy_to_user(u64_to_user_ptr(cmd.result_code), &result, sizeof(result)) ? -EFAULT : 0;
+ }
+diff --git a/kernel/kernel_compat.h b/kernel/kernel_compat.h
+index 2442eef5..0d0f633d 100644
+--- a/kernel/kernel_compat.h
++++ b/kernel/kernel_compat.h
+@@ -54,6 +54,11 @@ struct file *ksu_filp_open_compat(const char *filename, int flags, umode_t mode)
+ #define ksu_access_ok(addr, size) access_ok(VERIFY_READ, addr, size)
+ #endif
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
++/* SukiSU-Ultra：4.14 内核有 kvzalloc 但没有 kvcalloc，这里补一个等价实现 */
++#define kvcalloc(n, size, flags) kvzalloc((n) * (size), (flags))
++#endif
++
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0) // caller is reponsible for sanity!
+ static inline void ksu_zeroed_strncpy(char *dest, const char *src, size_t count)
+ {
+diff --git a/kernel/kernel_includes.h b/kernel/kernel_includes.h
+index 422fde3d..3b709134 100644
+--- a/kernel/kernel_includes.h
++++ b/kernel/kernel_includes.h
+@@ -73,7 +73,10 @@
+ #include <linux/vmalloc.h>
+ #include <linux/tty.h>
+ #include <linux/kref.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
++/* SukiSU-Ultra：static_call 是 5.10 以后才引入的机制，4.14 内核跳过 */
+ #include <linux/static_call.h>
++#endif
+ #include "arch.h"
+ #ifdef CONFIG_KSU_SUSFS
+ #include <linux/susfs.h>
+diff --git a/kernel/manager/pkg_observer.c b/kernel/manager/pkg_observer.c
+index 9082a6de..5a265832 100644
+--- a/kernel/manager/pkg_observer.c
++++ b/kernel/manager/pkg_observer.c
+@@ -21,7 +21,10 @@ static void ksu_track_throne_tw_func(struct callback_head *cb)
+         return;
+     track_throne(false);
+     // Renew the priority uid bitmap filter
++#ifdef CONFIG_KSU_SUSFS
++    /* SukiSU-Ultra：仅在启用隐藏特性时刷新优先级名单 */
+     susfs_parse_priority_app_strings();
++#endif
+ }
+ 
+ // Never scan from the fsnotify handler: fsnotify_mark_srcu and the rename's dir
+@@ -34,7 +37,10 @@ static void ksu_defer_track_throne(void)
+     struct callback_head *cb;
+ 
+     // Renew the getpriority uid bitmap filter
++#ifdef CONFIG_KSU_SUSFS
++    /* SukiSU-Ultra：仅在启用隐藏特性时刷新优先级名单 */
+     susfs_parse_priority_app_strings();
++#endif
+ 
+     if (!(current->flags & PF_KTHREAD)) {
+         cb = kzalloc(sizeof(*cb), GFP_KERNEL);
+diff --git a/kernel/preinit/preinit.c b/kernel/preinit/preinit.c
+index 46a40fa2..30579875 100644
+--- a/kernel/preinit/preinit.c
++++ b/kernel/preinit/preinit.c
+@@ -21,8 +21,11 @@
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+ #include <linux/fdtable.h>
+ #define ksu_close_fd_compat(fd) close_fd(fd)
+-#else
++#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
+ #define ksu_close_fd_compat(fd) ksys_close(fd)
++#else
++/* Linux 4.14 has no ksys_close(); sys_close() is the direct equivalent. */
++#define ksu_close_fd_compat(fd) sys_close(fd)
+ #endif
+ 
+ #define INIT_PATH "/system/bin/init"
+diff --git a/kernel/preinit/runner/nolibc/sys.h b/kernel/preinit/runner/nolibc/sys.h
+index c5564f57..ac4155f3 100644
+--- a/kernel/preinit/runner/nolibc/sys.h
++++ b/kernel/preinit/runner/nolibc/sys.h
+@@ -352,7 +352,7 @@ pid_t sys_vfork(void)
+ {
+ #if defined(__NR_vfork)
+ 	return my_syscall0(__NR_vfork);
+-#else
++#elif defined(__NR_clone3)
+ 	/*
+ 	 * clone() could be used but has different argument orders per
+ 	 * architecture.
+@@ -363,6 +363,12 @@ pid_t sys_vfork(void)
+ 	};
+ 
+ 	return my_syscall2(__NR_clone3, &args, sizeof(args));
++#elif defined(__NR_clone)
++	/* Linux 4.14 UAPI has no clone3/struct clone_args; use clone() instead. */
++	return my_syscall5(__NR_clone, CLONE_VM | CLONE_VFORK | SIGCHLD,
++			   0, NULL, NULL, 0);
++#else
++	return __sysret(sys_fork());
+ #endif
+ }
+ #endif
+diff --git a/kernel/preinit/runner/nolibc/sys/mount.h b/kernel/preinit/runner/nolibc/sys/mount.h
+index e39ec02e..870c8e41 100644
+--- a/kernel/preinit/runner/nolibc/sys/mount.h
++++ b/kernel/preinit/runner/nolibc/sys/mount.h
+@@ -12,7 +12,16 @@
+ 
+ #include "../sys.h"
+ 
++/* Linux 4.14 UAPI has no <linux/mount.h>; MS_* flags live in <linux/fs.h>. */
++#if defined(__has_include)
++#if __has_include(<linux/mount.h>)
+ #include <linux/mount.h>
++#else
++#include <linux/fs.h>
++#endif
++#else
++#include <linux/fs.h>
++#endif
+ 
+ /*
+  * int mount(const char *source, const char *target,
+diff --git a/kernel/preinit/runner/nolibc/types.h b/kernel/preinit/runner/nolibc/types.h
+index 16c6e9ec..bff926f6 100644
+--- a/kernel/preinit/runner/nolibc/types.h
++++ b/kernel/preinit/runner/nolibc/types.h
+@@ -16,6 +16,33 @@
+ #include <linux/time.h>
+ #include <linux/wait.h>
+ 
++/* SukiSU-Ultra: Linux 4.14 UAPI time-types fallback */
++/*
++ * Linux 4.14 UAPI has no <linux/time_types.h>, so struct __kernel_timespec
++ * and struct __kernel_itimerspec (used by nolibc's time64 fallbacks) are
++ * missing. On arm64 4.14 none of the *_time64 syscalls exist, so those
++ * branches are never reached -- but the timespec conversion helpers in
++ * time.h are compiled unconditionally and need complete types.
++ * Provide layout-compatible definitions only when the header is absent.
++ */
++#if defined(__has_include)
++#if __has_include(<linux/time_types.h>)
++#include <linux/time_types.h>
++#define KSU_HAVE_TIME_TYPES_H 1
++#endif
++#endif
++
++#ifndef KSU_HAVE_TIME_TYPES_H
++struct __kernel_timespec {
++	long long tv_sec;
++	long long tv_nsec;
++};
++struct __kernel_itimerspec {
++	struct __kernel_timespec it_interval;
++	struct __kernel_timespec it_value;
++};
++#endif
++
+ 
+ /* Only the generic macros and types may be defined here. The arch-specific
+  * ones such as the O_RDONLY and related macros used by fcntl() and open()

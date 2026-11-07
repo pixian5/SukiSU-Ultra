@@ -44,3 +44,20 @@ LTO/CFI FOLLOW-UP BUNDLE (added 2026-11-07)
     sha256 5161e345cc12a0902a84c9e555d50d14fc18a170a08c74852fd3f97f892d19eb
   NOTE: this file supersedes the "defconfig omitted the parent switches" claim
   in the older reports. See docs/20261107-0016-量产编译配置补验证与用户态组件核对-Claude-Opus-6.md.
+
+OPTIONAL-FEATURES BUNDLE (added 2026-11-07 08:04)
+  See ../camellian-features/MANIFEST-features.txt for the source patch, final
+  config, build script, symbol evidence and the honest per-feature result.
+  Restored for real: early-boot preinit runner, partial CPU identity spoof.
+  Switch only, functionally unusable on this kernel: KPM (no KernelPatch hook,
+  and Linux 4.14 lacks the __arm64_sys_truncate probing symbols).
+  Deliberately NOT restored: SuSFS (out-of-tree kernel patch), debug mode.
+  New candidate artifact: dist/boot-sukisu-features-lto-stockdtb.img 67108864
+    md5 2ab30349b20c2d73c0ec27a1d76a54ca
+    sha256 f03eef5fc9f486664a19d0166cdfb5fa356f4aef2cbeaa2ae4618111e6c8e276
+    pack_boot.py verification 12/12 PASS. NOT yet copied back to the local Mac.
+  RECOMMENDED for a first flash is still dist/boot-sukisu-lto-stockdtb.img,
+  because the new image adds an unverified early-boot execution path while the
+  KPM switch brings no real capability. See
+  docs/20261107-0804-可选隐藏特性补齐与再次重编-Claude-Opus-6.md section 6.
+  Neither image has been flashed. Phone stays read-only.

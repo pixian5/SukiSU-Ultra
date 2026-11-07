@@ -1,0 +1,12 @@
+ffffff80084380f8 T sys_truncate
+ffffff8009083fa0 T ksu_extension_kpm_io
+ffffff8009083ff8 T ksu_extension_cpu_spoof_io
+ffffff800908c1d0 T ksu_supercall_handle_ioctl
+ffffff800908e4a8 T ksu_handle_execveat
+ffffff8009db1cec T kernelsu_init
+ffffff8009db1fa8 T ksu_preinit_init
+ffffff8009e37310 D ksu_preinit_runner_start
+ffffff8009e3ae48 D ksu_preinit_runner_end
+ffffff8009e46200 D cpu_data
+ffffff800a532010 D elf_hwcap
+ffffff800a577230 D loops_per_jiffy

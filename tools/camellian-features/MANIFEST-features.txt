@@ -1,0 +1,66 @@
+SUKISU-ULTRA 4.14 OPTIONAL-FEATURES BUNDLE  (camellian / Redmi Note 10 5G)
+Generated 2026-11-07. Build host: Box cloud Ubuntu 24.04, clang-r383902.
+Nothing in this bundle touches a phone. No flashing was performed.
+
+PURPOSE
+  Restore the optional features that were disabled during the first 4.14
+  integration build, then rebuild and repackage the boot image.
+
+FINAL CONFIG (config/features-config-options.txt)
+  CONFIG_KSU=y, CONFIG_KSU_FEATURE_ADBROOT=y
+  CONFIG_KPM=y                      (newly enabled this round)
+  # CONFIG_KSU_SUSFS is not set    (deliberately left off)
+  # CONFIG_KSU_DEBUG is not set    (upstream default, no hiding benefit)
+  Production LTO/CFI restored earlier: THIN_ARCHIVES / LTO / THINLTO /
+  LTO_CLANG / CFI / CFI_CLANG / CFI_CLANG_SHADOW all =y.
+
+WHAT WAS ACTUALLY RESTORED
+  1. Early-boot preinit runner. The kernel Makefile disables it when
+     $(objtree)/usr/include/linux/unistd.h is absent; `make headers_install`
+     created the UAPI headers. Four 4.14 compatibility fixes in nolibc
+     (clone3, linux/mount.h, ksys_close, __kernel_timespec) made it build.
+     Evidence: runner.elf 15160 bytes; ksu_preinit_runner_start..end in
+     vmlinux differ by exactly 15160 bytes; ksu_preinit_init is linked.
+  2. CPU identity spoof, partial but real. Writes cpu_data[].reg_midr,
+     loops_per_jiffy and elf_hwcap. All three symbols exist in vmlinux
+     (see logs/key-symbols.txt), so the io handler does not degrade to
+     -ENXIO. The vDSO clock and 64-bit hwcap2 rewrites are NOT implemented:
+     Linux 4.14 has no such mechanism. Fake "supported" is refused.
+
+WHAT WAS NOT RESTORED, AND WHY
+  3. KPM: the switch and the whole ioctl/forwarding framework are compiled
+     in (ksu_extension_kpm_io, do_kpm, sukisu_kpm_bridge are in vmlinux),
+     but the bridge only works if a KernelPatch hook is present. It probes
+     __arm64_sys_truncate / .cfi_jt / .cfi; Linux 4.14 exposes only the old
+     name sys_truncate (see logs/key-symbols.txt). The probe therefore always
+     returns -EOPNOTSUPP. This is structural: enabling CONFIG_KPM does NOT
+     make KPM usable on this kernel. It would need a KernelPatch port plus
+     actual .kpm module files, neither prepared nor tested here.
+  4. SuSFS: CONFIG_KSU_SUSFS=y fails with 'linux/susfs.h file not found'.
+     The upstream build itself prints "You have not integrated susfs in your
+     kernel yet". SuSFS is an out-of-tree kernel patch, not a config switch.
+     Left disabled rather than faked.
+  5. CPU spoof vDSO/hwcap2 and KSU_IOCTL_SET_SPOOF_VERSION (present in the
+     official release userspace, absent from the builtin UAPI) remain known
+     gaps from before this round.
+
+PRODUCTS (rebuilt with production LTO/CFI, 0 build errors)
+  Image.gz       14291594  md5 8e8af8ddb07524b6f8ba5302b325df60
+  Image.gz-dtb   14423380  md5 baecc0af8d2940f53647d728fd05ce07
+  vmlinux       664910784  md5 ff390ca00dafcc83f48f7f90d8ccd992
+  Image.gz sha256 438764f5b27a19867512a2b2755ab356b708ab63f9fd3d9329d4f47dd7695e06
+  boot-sukisu-features-lto-stockdtb.img  67108864
+    md5    2ab30349b20c2d73c0ec27a1d76a54ca
+    sha256 f03eef5fc9f486664a19d0166cdfb5fa356f4aef2cbeaa2ae4618111e6c8e276
+  pack_boot.py verification: 12/12 PASS.
+
+FILES
+  patches/sukisu-4.14-optional-features.patch  all 9 edited source files
+  config/features-config-options.txt           final .config excerpt
+  scripts/build-features.sh                    resumable full build command
+  logs/probe-clean.log                         clean drivers/kernelsu rebuild
+  logs/key-symbols.txt                         vmlinux symbol evidence
+
+STILL UNVERIFIED
+  Never booted on a phone. No root grant, no hiding behaviour, no AVB boot
+  outcome has been tested. Phone stays read-only until explicit permission.
