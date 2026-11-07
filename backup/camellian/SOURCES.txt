@@ -1,0 +1,55 @@
+TRUSTED IMAGE SOURCES — camellian / Redmi Note 10 5G
+Updated 2026-11-08 04:28 (Asia/Shanghai)
+
+RULE 1  GitHub Release assets are the ONLY trusted source.
+        https://github.com/pixian5/SukiSU-Ultra/releases
+        Every release carries SHA256SUMS.txt. Verify before flashing.
+        GitCode mirror (https://gitcode.com/laotongtian/SukiSU-Ultra/releases)
+        has the same assets but its attachments need a login to download.
+
+RULE 2  DO NOT use the fixed object name
+        cst:xbz/camellian/boot-sukisu-susfs-lto-stockdtb.img
+        as "the latest image". Several cloud boxes wrote to this same name
+        in parallel on 2026-11-08, producing at least three different
+        kernels in 16 minutes. A filename is not a version.
+
+RULE 3  Never flash an image without a checksum AND a matching document.
+
+Current mainline
+        tag   camellian-susfs-v0.0.6  (published by the other cloud box)
+        route SuSFS v1.5.5 4.14 core + v2.3.0 ABI translation layer
+        fix   four inert commands write err=-EOPNOTSUPP in the ABI layer
+              so the manager reports failure instead of fake success
+        md5   3248b6a178b2aa91e423d95feab292ad
+        sha256 02d4aecb764d798987ae680daa5274c400f3c504fb8451458e3bb749a4438fd3
+        src   tools/camellian-susfs/kernel/ (ABI fix committed as 62624b44)
+              plus kernel-tree / SukiSU-tree patches in
+              tools/camellian-susfs/patches/
+        state NOT verified on a real device. Flashing needs explicit user
+              permission ("刷机").
+
+Experimental variant (NOT a flashing candidate)
+        Built locally to test CONFIG_KALLSYMS_ALL=n and a different
+        command-rejection point. Source snapshot only:
+        tools/camellian-susfs/patches/experimental-kallsyms-off/
+        Its rejection method is less correct than the mainline ABI-layer
+        approach, so it is kept for reference, never published as a release.
+
+Archived, NOT for flashing (evidence only)
+        cst:xbz/camellian/archive/boot-sukisu-susfs-cst-0356-v230.img
+              md5 384c0248b0939edcc3e293500dc6a9a2  (03:56 overwrite)
+        cst:xbz/camellian/archive/boot-sukisu-susfs-cst-0356-unknown.img
+              md5 a5fa0ef37d8a148304b166b8565dee3a  (04:12 overwrite)
+
+Previous releases (archived, no longer mainline)
+        v0.0.4  md5 322fd6381c8b6d546b0298fbd1b7736f  (v2.3.0 translation layer)
+        v0.0.5  md5 95352fe103f84e1fe07e4d5a2633d461  (vanilla 1.4.2 core +
+                hand-written compatibility layer; source NEVER committed,
+                so this build cannot be reproduced)
+
+Rollback (unchanged, exact restore of the current slot b)
+        boot_b-before.img  md5 531c534bcc8d3172e03b12a2f6dd135d
+        boot-stock.img     md5 f8e4f42a4538b03c519bb70921d88bcc
+
+The phone still runs boot-sukisu-final3-lto-stockdtb.img (kernel #11,
+slot b). No write to the phone was performed during this work.

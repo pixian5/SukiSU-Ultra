@@ -188,6 +188,7 @@ python3 /path/to/pack_boot.py /workspace/dist/boot-sukisu-susfs-lto-stockdtb.img
 ## 6. 已知坑（都已经踩过，不要重复）
 
 1. **SuSFS 1.3.8 与 SukiSU 不匹配**：缺 `SUSFS_MAGIC`、`susfs_add_sus_path_loop`、`susfs_start_sdcard_monitor_fn`、`susfs_parse_priority_app_strings`、`CMD_SUSFS_ADD_SUS_PATH_LOOP`、`CMD_SUSFS_SET_CMDLINE_OR_BOOTCONFIG`、`CMD_SUSFS_ADD_OPEN_REDIRECT`、`CMD_SUSFS_ADD_SUS_MAP` 等。**必须用 1.4.2**。
+   > **2026-11-08 更正（重要）**：这条只说了「1.3.8 不行」，容易被读成「换 1.4.2 就够了」，**这是错的**。实测 `1.4.2-kernel-4.14` 同样不含 SukiSU 需要的扩展接口：符号缺失、函数签名（`int fn(struct st_*)` vs `void fn(void __user **)`）和结构体布局都不兼容。用 1.4.2 必须**另外自建兼容层**（见 `docs/20261108-0350-SuSFS隐藏方案编译完成记录-Kimi-K3.md`）。另一条可行路线是保留 v1.5.5 的 4.14 核心 + 自写 v2.3.0 接口翻译层（`tools/camellian-susfs/`），两者不要混。
 2. **`susfs_def.h` 在 1.3.8 里不存在**，但 SukiSU 的 `kernel/kernel_includes.h` 会 include 它，导致 `fatal error: 'linux/susfs_def.h' file not found`。
 3. **`reboot` 系统调用必须挂钩子**：`ksud` 子进程通过带魔数的 `reboot` 申请内核通道，缺钩子会报 `could not retrieve kernelsu driver fd`。位置在 `kernel/reboot.c` 的 `SYSCALL_DEFINE4(reboot)` 开头。
 4. **`do_get_app_profile` 对不存在的 uid 必须返回默认 profile**，返回 `-ENOENT` 会让管理器报「更新 app profile 失败」、授权开关打不开。位置在 `kernel/supercall/dispatch.c`。

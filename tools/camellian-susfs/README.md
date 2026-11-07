@@ -73,13 +73,17 @@ cat tools/camellian-susfs/config/susfs-4.14-config.txt >> <defconfig 或 .config
 | uname / cmdline 伪装 | 可用 | |
 | open_redirect | 可用 | |
 | enable_log | 可用 | |
-| hide ksu/susfs symbols | 可用 | 需要 CONFIG_KALLSYMS_ALL |
-| sus_path_loop | **不支持** | ABI 明确返回 `-EOPNOTSUPP`，管理器会显示命令失败；不再静默退化成一次性添加 |
-| sus_map | **不支持** | 无过滤 `/proc/pid/maps` 的钩子；ABI 返回 `-EOPNOTSUPP`，且不再出现在启用特性列表 |
-| avc_log_spoofing | **不支持** | 无 security/selinux 侧钩子；ABI 返回 `-EOPNOTSUPP` |
-| priority_uid_filter | **不支持** | 没有实现 getpriority 过滤；ABI 返回 `-EOPNOTSUPP` |
+| hide ksu/susfs symbols | 可用 | 在 `/proc/kallsyms` 的读路径按名字过滤，**不需要** `CONFIG_KALLSYMS_ALL`；主线仍保留 `=y`，另有实验变体把它关掉以验证可行性（未真机验证） |
+| sus_path_loop | **明确不支持** | 4.14 无周期重扫机制；命令现在返回「不支持」，不再静默降级成一次性添加 |
+| sus_map | **明确不支持** | 只标记 inode，没有过滤 `/proc/pid/maps` 的钩子；命令现在返回「不支持」，也不再从特性列表汇报 |
+| avc_log_spoofing | **明确不支持** | 没有 security/selinux/avc.c 钩子；命令现在返回「不支持」 |
+| priority_uid_filter | **明确不支持** | 只打印，未参与 getpriority 判定；命令现在返回「不支持」 |
 | try_umount | 未启用 | v1.5.5 的可选特性，需要额外 KSU 支撑 |
 | KPM | 不可用 | 与 SUSFS 无关，4.14 缺 KernelPatch 钩子 |
+
+**2026-11-08 v0.0.6 主线修正**：以上四条「假支持」在 **SuSFS 接口层**（`kernel/fs/susfs_abi.c`）把 `err` 写回 `-EOPNOTSUPP`（-95），`susfs_get_enabled_features` 也不再汇报 `CONFIG_KSU_SUSFS_SUS_MAP`。管理器会明确报错而不是「支持/成功」。不能用 126（`ERR_CMD_NOT_SUPPORTED`），后台程序会把它当成「可忽略」静默放行，仍是假支持。真机上仍可调用 `sus_path`、`sus_kstat`、`uname`、`cmdline`、`open_redirect` 等有真实实现的命令。
+
+> 另有一个**实验变体**在命令分发处（`kernel/supercall/dispatch.c`）直接返回错误码，并关掉 `CONFIG_KALLSYMS_ALL`。它的拒绝方式不如主线贴合用户态协议，源码只存档在 `patches/experimental-kallsyms-off/`，**不作为刷机候选**。
 
 > **关于「不支持」的语义**：这四条命令仍保留入口（内核 ABI 需要符号存在），但一进来就写入
 > `-EOPNOTSUPP`，不做任何实际动作。用户态 `ksud` 会把非 0 / 非 126 的 `err` 当成失败上报，
@@ -87,17 +91,23 @@ cat tools/camellian-susfs/config/susfs-4.14-config.txt >> <defconfig 或 .config
 > `sus_map` 同时从 `susfs_get_enabled_features()` 的返回里移除，特性页不会再把它标为启用。
 > 这是刻意的取舍：宁可功能少，也不让用户误以为隐藏已经生效。
 
+### 已知限制（必须随镜像一起给用户）
+
+- **尚未在真机验证**：编译通过 + 结构校验合格 ≠ 能开机 / 隐藏有效。刷机需用户明确授权。
+- **小米专有模块要逐份核对**：主线 v0.0.6 与 v0.0.4 实测是 `# CONFIG_MIHW is not set`；v0.0.5 才是 `CONFIG_MIHW=y` + `# CONFIG_MILLET is not set`。发布说明曾把这几份混为一谈，一律以镜像内核里提取的编译配置为准（见 `config/ikconfig-v0.0.6-mainline.txt`）。
+- **全量符号暴露开关**：主线保留 `CONFIG_KALLSYMS_ALL=y`。符号隐藏逻辑本身不依赖它，因此实验变体把它关掉做过编译验证；**该改动未真机验证**，若以后采用并出现开机异常，改回 `=y` 重编即可。
+- **vbmeta 内哈希未重签**：没有厂商私钥，解锁启动锁下校验错误不致命，**重新上锁会无法启动**。
+- **判据铁律**：不要用 `adb shell su` 判断成败（调试模式关闭时本就不可用）。正确判据是管理器显示「工作中」+ 后台有 root 子进程 + 内核日志出现 `susfs is initialized! version: v2.3.0` + 特性列表不再出现 `CONFIG_KSU_SUSFS_SUS_MAP` + 四条不支持的命令明确报错。
+
+
 ## 验证状态
 
 - 编译验证（2026-11-08）：x86_64 Linux 沙箱，AOSP clang-r383902 完整编译通过。
-- v0.0.6（2026-11-08）：四条未实现命令改为明确 `-EOPNOTSUPP`，重新用出厂配置 + LTO/CFI 编译并打包。
-  - `dist/boot-sukisu-susfs-lto-stockdtb.img` 67,108,864 字节
-  - MD5 `3248b6a178b2aa91e423d95feab292ad`
-  - SHA256 `02d4aecb764d798987ae680daa5274c400f3c504fb8451458e3bb749a4438fd3`
-  - 内核 `4.14.186-perf-gf4e416aea-dirty`，53 个 `susfs_` 符号
-  - 结构 10/10 校验通过
-- v0.0.4（历史版本，已被 v0.0.6 取代）：MD5 `322fd6381c8b6d546b0298fbd1b7736f`。
+- 历史镜像 v0.0.4：用**出厂 ikconfig + LTO/CFI** 编译，装回原厂内存盘/DTB，10/10 结构校验通过。MD5 `322fd6381c8b6d546b0298fbd1b7736f`、SHA256 `c3c2c6d75382ed06ebcbbd3dd9bbbf8dc234410860fa47de99b122ec98a44760`。仅存档，不再是主线。
+- **当前主线 v0.0.6**：另一台并行云电脑在 4.14 接口翻译层路线上修掉四条「假支持」命令后发布，MD5 `3248b6a178b2aa91e423d95feab292ad`、SHA256 `02d4aecb764d798987ae680daa5274c400f3c504fb8451458e3bb749a4438fd3`；本机补齐了 GitCode 资产、刷后判据与来源说明。内核树补丁、SukiSU 树补丁与出厂配置快照已固化在 `patches/` 与 `config/`，校验值见发布页与 `backup/camellian/IMAGE-VERSIONS.txt`。
+- 主线构建细节：67,108,864 字节、53 个 `susfs_` 符号、10/10 结构校验通过，出厂配置 + LTO/CFI（校验值见上一条）。
 - 真机验证：**未刷入**。刷机需要用户明确授权，且会写 `boot_b`。
+- 另一条路线 v0.0.5（vanilla 1.4.2 + 自写兼容层）的源码从未提交，不在本包内，不要与本包混用。
 - 本包不改变启动镜像打包流程；`bootimg.py` 与既有 `pack_boot.py` 的布局假设一致。
 
 ## 来源与许可
