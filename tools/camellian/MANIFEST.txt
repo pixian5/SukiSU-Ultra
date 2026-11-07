@@ -106,3 +106,13 @@ WORKING IMAGE + AUTHORIZATION FIXES (added 2026-11-08)
   authorization fails with "could not retrieve kernelsu driver fd" and
   "failed to update app profile".
   See docs/20261108-0046-项目现状复核与复现风险-DeepSeek-V4.1-Flash.md.
+
+SUSFS 4.14 PORT (added 2026-11-08, separate bundle)
+  See ../camellian-susfs/ : v1.5.5 4.14 core + v2.3.0 ABI layer, headers,
+  one-shot integrate script, verification build script and symbol checker.
+  Build-verified in a Linux sandbox with clang-r383902:
+    Image.gz 11508451  md5 bb1c8f8878ea55e7a1bffe6126f5bfd0
+    sha256 35171571cd1708ef25f49a62dbe431430d32f11695c17ea95532e56c13aba460
+  51 susfs symbols, version string v2.3.0. NOT a flashable image:
+  generic defconfig, LTO/CFI disabled, MIHW off, no boot.img packaging.
+  See docs/20261108-0210-SUSFS-v2.3.0移植与编译验证-DeepSeek-V4.1-Flash.md.

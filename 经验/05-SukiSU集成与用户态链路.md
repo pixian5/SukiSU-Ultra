@@ -26,6 +26,13 @@
 
 ## 能力边界（不要夸大）
 
+- **SUSFS**：4.14 采用「v1.5.5 原生核心 + v2.3.0 ABI 翻译层」的混合实现，已完整编译通过（见 `tools/camellian-susfs/`）。可用：sus_path / sus_mount / sus_kstat / uname / cmdline / open_redirect / 日志与符号隐藏；不生效：sus_map / avc_log_spoofing / priority_uid_filter；sus_path_loop 退化为一次性添加。产物尚未真机验证。
 - **KPM**：只补回开关与框架；4.14 缺 KernelPatch 钩子，探测符号 `__arm64_sys_truncate` 等不存在，结构性不可用。
-- **SuSFS**：需要外部内核补丁，未集成；不要做假实现。
 - 判断标准是「真机可用 + 有证据」，不是「编译通过 / 开关能打开」。
+
+## SUSFS 上 4.14 的四个必改点
+
+1. `sucompat.c` 的 SUSFS 实现是 5.x 专用（按 `struct filename *` 取值），4.14 必须加 `LINUX_VERSION_CODE >= 5.0` 守卫，否则开机 1 秒内 data abort；
+2. SUSFS 下 LSM `task_fix_setuid` 不注册，必须在 `SYSCALL_DEFINE3(setresuid)` 调用 `ksu_handle_setresuid()`，否则应用不关 seccomp、拿不到驱动 fd；
+3. `strncpy_from_user_nofault()` 5.8 才有，需要兼容宏；
+4. adb_root 在 SUSFS 下只有 `ksu_adb_root_handle_execveat(const char *, void ***)`，envp 要传 `&envp.ptr.native`。

@@ -3,6 +3,16 @@
 
 > 当前分支：`main`（活跃开发中）· 基于 KernelSU 分叉，独立演进
 
+> **仓库与交接文档位置（2026-11-08）**
+>
+> - 本仓库（个人 fork，**含**本项目的交接文档与补丁）：`https://github.com/pixian5/SukiSU-Ultra`
+> - GitCode 镜像：`https://gitcode.com/laotongtian/SukiSU-Ultra`
+> - 上游官方仓库 `SukiSU-Ultra/SukiSU-Ultra` **不包含**这些文档，clone 错地方就会「找不到交接文档」
+> - SuSFS 编译交接文档：[20261108-0135-SuSFS隐藏方案编译交接文档](../20261108-0135-SuSFS隐藏方案编译交接文档-Claude-Opus-6.md)（`main` 分支）
+> - 补丁目录：`tools/camellian-susfs/patches/`；凭证单独提供，**不在仓库内**
+> - 找不到时：先 `git remote -v` 确认指向本 fork，再 `git pull origin main`
+
+
 **简体中文** [English](../README.md) | 
 
 一个 Android 上基于内核的 root 方案，由 [`tiann/KernelSU`](https://github.com/tiann/KernelSU) 分叉而来，添加了一些有趣的变更。
@@ -70,9 +80,13 @@
 - [V14.0.6.0 官方卡刷包下载、boot.img 提取与版本对照](../20261107-0935-V14.0.6.0原厂镜像下载提取与版本对照-Claude-Opus-6.md)：在云电脑下载 3.87 GB 的 MIUI Global V14.0.6.0 整包并校验，用 payload-dumper-go 2.1.0 从 `payload.bin` 解出 boot/dtbo/vbmeta 镜像，与当前 V14.0.4.0 EEA 版本对照。关键发现：内核版本串完全相同（`4.14.186-perf-gf8d872e9279c`），但构建批次不同——构建者标识不同、编译时间晚 5 天、内核小 1,535 字节、内存盘大 12 字节，所以「版本串相同」不等于「同一份镜像」。没有刷任何东西，也没碰手机。
 - [首次真机试刷与 SukiSU 接入验证](../20261107-1110-首次真机试刷与SukiSU接入验证-Claude-Opus-6.md)：第一次真机刷入。自编 4.14 内核成功开机，SukiSU 管理器显示「工作中」，后台有以 root 运行的子进程。完整记录时间线（推荐版 → 调试版诊断 → 关闭调试的最终版）、以及用 `adb shell su` 当判据导致的误判（关闭调试模式时它本来就不可用）和正确判据。只写了当前槽启动分区，另一槽、校验分区、用户数据均未动；精确回退件仍在。
 - [SukiSU 用户态链路修复与授权验证](../20261107-2230-SukiSU用户态链路修复与授权验证-Claude-Opus-6.md)：修掉阻塞 root 授权的三处接口不匹配——`reboot` 系统调用缺钩子导致后台子进程拿不到通道、读取不存在的应用配置时返回「不存在」导致管理器误判「更新 app profile 失败」、以及管理器界面入口被自身隐藏功能禁用（重装 APK 恢复）。修复后管理器日志 `install result: true`、显示「工作中」、授权成功。含当前镜像校验值与后续建议。
+- [SuSFS 隐藏方案编译交接文档](../20261108-0135-SuSFS隐藏方案编译交接文档-Claude-Opus-6.md)：给另一台云电脑上的 AI 使用的自包含交接说明。列出全部公开仓库与版本（内核 camellian-t-oss、SukiSU builtin、SuSFS 1.4.2-kernel-4.14）、补丁应用顺序、配置开关、编译命令、打包脚本、验收标准、七个已知坑（1.3.8 API 不匹配、缺 susfs_def.h、reboot 钩子、app profile fallback、管理器 alias、ADB 换行改写、GitLab TLS），以及产物传输约定。凭证不写入仓库。
 - [项目现状复核与复现风险](../20261108-0046-项目现状复核与复现风险-DeepSeek-V4.1-Flash.md)：刷机成功后的只读复核。实测当前镜像与回退件校验值一致；仓库比上游多 28 个文档/工具提交、少 7 个上游提交，项目本体源码零改动。最重要发现：让授权修通的两处修改（内核树 `reboot.c` 钩子、模块侧 `dispatch.c` 默认配置回退）只存在于云电脑构建树，仓库任何补丁或脚本里都没有，按现有资产从零重建无法得到当前可用镜像。文档给出按优先级排列的整改建议。
 - [当前开发进度](../20261108-0101-当前开发进度-DeepSeek-V4.1-Flash.md)：里程碑表、当前运行配置与校验值、本轮改动（两处授权补丁入库并接入 `integrate.py` 第 8/9 步）、验证方式与已知限制。
 - [下一步待实现](../20261108-0101-下一步待实现-DeepSeek-V4.1-Flash.md)：按 P0–P3 排列的待办与验收标准——重建对比闭环、云电脑修改文件回传、异地备份、合并上游、真机收尾、KPM/SuSFS 可选再评估，以及「不要做」清单。
+- [SUSFS v2.3.0 移植与编译验证](../20261108-0210-SUSFS-v2.3.0移植与编译验证-DeepSeek-V4.1-Flash.md)：把 SuSFS 接到 4.14 手动挂钩内核——上游 v1.5.5 的 4.14 核心 + v2.3.0 ABI 翻译层。记录四处 SukiSU 侧修复（5.x 专属 sucompat 分支、缺 setresuid 钩子、缺 `strncpy_from_user_nofault`、adb_root 签名）、三个厂商树编译阻塞、沙箱内完整编译结果（`Image.gz` 11,508,451 字节、51 个 susfs 符号、v2.3.0 字符串）、逐项能力边界，以及为什么这份产物只能算编译验证、不能刷机。
+- [SUSFS 可刷 boot 镜像构建与产物](../20261108-0250-SUSFS可刷镜像构建与产物-DeepSeek-V4.1-Flash.md)：真正打出可刷镜像。从用户上传的原厂 `boot-stock.img` 提取出厂 `ikconfig`，打开 KSU/SuSFS，保留量产 LTO/CFI，用原厂内存盘/DTB 重打包，10/10 结构校验通过。给出产物校验值（67,108,864 字节，MD5 `322fd638...`，SHA256 `c3c2c6d7...`）、内核版本串、刷机与回退命令、刷后验证判据，以及剩余风险（尚未真机验证、KPM/MIHW 关闭、sus_map/avc/priority 不生效）。
+- [SuSFS 可刷镜像的修改建议](../20261108-0335-SuSFS镜像修改建议-Claude-Opus-6.md)：对 `camellian-susfs-v0.0.4` 的具体修改建议——三个 SuSFS 命令（`sus_map`、`avc_log_spoofing`、`priority_uid_filter`）在 ABI 层注册了但内核无实现，管理器显示「支持」却实际无效，要么明确返回「不支持」要么补钩子；`sus_path_loop` 退化为一次性；`KALLSYMS_ALL` 暴露全部符号；`MIHW` 因缺厂商模块被关闭；版本号 0.0.5 与 v0.0.4 不一致；附分阶段计划与真机验证清单。
 
 ## KPM 支持
 
