@@ -54,7 +54,11 @@ SuSFS 候选镜像来源清单（2026-11-08 04:20 补充）
       md5 95352fe103f84e1fe07e4d5a2633d461
       sha256 0bf8621117afe31dbbcef90a4c55af87b2ed26327a4b7b0ffa32d3b6ee1ce9d7
       路线：vanilla 1.4.2 核心 + 自写兼容层；clang 11 r383902；开机打印 1.4.2
-      源码未入库、无法复现；仅存档，不作为主线
+      源码未入库、无法复现；2026-11-08 09:30 结案：私有源码不可恢复，
+      正式从候选除名、仅作历史存档，不再等待任何外部机器。
+      公开等价实现（4.14 + v2.3.0 扩展接口）已固化在
+      tools/camellian-susfs/reference/4.14-extension-uapi/，
+      自足重建任务书见 docs/20261108-0930-*
   boot-sukisu-susfs-cst-0356.img
       md5 384c0248b0939edcc3e293500dc6a9a2
       sha256 1fee038c9c4b4bc0a329102f34267a733c23d827f1bdd48025e08b687987d41d

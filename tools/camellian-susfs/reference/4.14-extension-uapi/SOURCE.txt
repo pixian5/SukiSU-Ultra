@@ -1,0 +1,9 @@
+Source: https://github.com/iput-object/kernel_xiaomi_sm6250
+Branch: base
+Commit: 9700db640bbb5b27dca74ea06450d4c59550ebcc
+Kernel: Linux 4.14.356 (non-GKI, Xiaomi sm6250)
+Files: fs/susfs.c, include/linux/susfs.h, include/linux/susfs_def.h
+License: GPL-2.0 (Linux kernel tree)
+Fetched: 2026-11-08 as a PUBLIC reference implementation of the SukiSU
+extended SuSFS UAPI on a 4.14 kernel. It is NOT the private v0.0.5
+compatibility layer; see docs/20261108-0930-* for how to use it.

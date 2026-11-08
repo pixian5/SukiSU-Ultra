@@ -28,7 +28,7 @@
 ## 【下一步待实现】
 
 1. **刷机并真机验证（需用户明确说「刷机」）**：以 `camellian-susfs-v0.0.6` 发布页资产为准（先核对校验值）→ 确认管理器「工作中」、后台有 root 子进程、内核日志出现 `susfs is initialized! version: v2.3.0`、`ksud susfs status` 显示 `v2.3.0 / NON-GKI`、特性列表不再出现 `CONFIG_KSU_SUSFS_SUS_MAP`、四条不支持的命令明确报错，再用 Momo 复测隐藏效果。**不要用 `adb shell su` 判断成败**。若改刷 v0.0.5 的 1.4.2 路线，判据相应改为 `1.4.2 / NON-GKI`；
-2. **复现闭环**：已完成——`tools/camellian-susfs/patches/` 里有厂商内核树补丁、SukiSU 树补丁与编译配置快照，`config/ikconfig-v0.0.6-mainline.txt` 是从主线镜像里提取的出厂配置；实验变体源码单独放在 `patches/experimental-kallsyms-off/`。剩余一项是让另一台云电脑把 v0.0.5（1.4.2 兼容层）的源码也交回仓库；
+2. **复现闭环**：已完成——`tools/camellian-susfs/patches/` 里有厂商内核树补丁、SukiSU 树补丁与编译配置快照，`config/ikconfig-v0.0.6-mainline.txt` 是从主线镜像里提取的出厂配置；实验变体源码单独放在 `patches/experimental-kallsyms-off/`。v0.0.5 那条路线的私有源码确认不可恢复，已结案并从候选除名；公开的等价 4.14 扩展接口实现已固化在 `tools/camellian-susfs/reference/4.14-extension-uapi/`，详见 [结案报告](docs/20261108-0930-v0.0.5源码缺失结案与公开替代实现-Claude-Opus-6.md)；
 3. **资产安全**：给回退件与可用镜像做异地备份；
 4. **仓库同步**：合并上游 8 个提交（多为管理器界面改动，与内核无关）；
 5. **真机收尾**：重启验证 Zygisk Next、逐个启用模块、核对授权列表。
