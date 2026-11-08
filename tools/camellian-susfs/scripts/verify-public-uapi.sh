@@ -26,13 +26,14 @@ KEEP="${KEEP:-0}"
 for d in "$KERNEL_SRC" "$OUT" "$CLANG" "$REF"; do
   if [ ! -d "$d" ]; then echo "错误：目录不存在 $d" >&2; exit 2; fi
 done
-for f in susfs.c susfs.h susfs_def.h; do
+for f in susfs.c susfs.h susfs_def.h mnt_compat.c; do
   if [ ! -f "$REF/$f" ]; then echo "错误：参考文件缺失 $REF/$f" >&2; exit 2; fi
 done
 if [ ! -f "$OUT/.config" ]; then echo "错误：构建目录里没有 .config（$OUT）" >&2; exit 2; fi
 
 BACKUP="$OUT/backup-before-public-uapi"
 mkdir -p "$BACKUP" || exit 2
+JOBS="${JOBS:-2}"   # 并发数可调：这颗 4.14 树在小内存机器上 -j4 容易卡在依赖扫描
 
 # 备份将被替换的文件（含可能不存在的 susfs_abi.c）
 for rel in fs/susfs.c fs/susfs_abi.c include/linux/susfs.h include/linux/susfs_def.h fs/Makefile; do
@@ -49,32 +50,46 @@ restore() {
   cp -a "$BACKUP/include/linux/susfs.h" "$KERNEL_SRC/include/linux/susfs.h" 2>/dev/null || true
   cp -a "$BACKUP/include/linux/susfs_def.h" "$KERNEL_SRC/include/linux/susfs_def.h" 2>/dev/null || true
   cp -a "$BACKUP/fs/Makefile" "$KERNEL_SRC/fs/Makefile" 2>/dev/null || true
+  rm -f "$KERNEL_SRC/fs/susfs_mnt_compat.c" "$OUT/fs/susfs_mnt_compat.o" "$OUT/fs/susfs.o"
 }
 trap restore EXIT
 
-# 用公开实现替换 SuSFS 三个核心文件
+# 用公开实现替换 SuSFS 三个核心文件，并加入 4.14 挂载编号兼容层
 cp "$REF/susfs.c"        "$KERNEL_SRC/fs/susfs.c"
 cp "$REF/susfs.h"        "$KERNEL_SRC/include/linux/susfs.h"
 cp "$REF/susfs_def.h"    "$KERNEL_SRC/include/linux/susfs_def.h"
+cp "$REF/mnt_compat.c"   "$KERNEL_SRC/fs/susfs_mnt_compat.c"
 
 # 公开实现把命令入口都放在 susfs.c 里，不再需要 v2.3.0 路线那个翻译层；
-# 从 fs/Makefile 去掉 susfs_abi.o，避免重复符号与旧接口干扰。
+# 从 fs/Makefile 去掉 susfs_abi.o，并把兼容层加进编译目标。
 if grep -q 'susfs_abi' "$KERNEL_SRC/fs/Makefile"; then
   sed -i 's/[[:space:]]*susfs_abi\.o//g' "$KERNEL_SRC/fs/Makefile"
+fi
+if ! grep -q 'susfs_mnt_compat' "$KERNEL_SRC/fs/Makefile"; then
+  echo 'obj-$(CONFIG_KSU_SUSFS) += susfs_mnt_compat.o' >> "$KERNEL_SRC/fs/Makefile"
 fi
 
 echo "参考实现：$REF" | tee "$LOG"
 echo "内核源码：$KERNEL_SRC" | tee -a "$LOG"
-echo "开始编译：$(date '+%F %T %Z')" | tee -a "$LOG"
+echo "开始编译：$(date '+%F %T %Z')，并发 -j$JOBS" | tee -a "$LOG"
 
 # 与量产构建完全一致的编译参数：保留 LTO/CFI，不改 .config
 cd "$KERNEL_SRC" || exit 2
 export PATH="$CLANG/bin:$PATH"
 export LD_LIBRARY_PATH="$CLANG/lib64:${LD_LIBRARY_PATH:-}"
-make O="$OUT" -j4 ARCH=arm64 CC=clang \
-  CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- \
-  LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy AR=llvm-ar \
-  >> "$LOG" 2>&1
+MAKE_ARGS=(O="$OUT" -j"$JOBS" ARCH=arm64 CC=clang
+  CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu-
+  LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy AR=llvm-ar)
+
+# 先单独编译两个目标文件：几秒钟就能拿到语法/字段层面的结论，
+# 即使后面的全量编译卡住也不会一无所获。
+make "${MAKE_ARGS[@]}" fs/susfs.o fs/susfs_mnt_compat.o >> "$LOG" 2>&1
+single_rc=$?
+echo "单文件编译返回码：$single_rc（$(date '+%F %T %Z')）" | tee -a "$LOG"
+grep -i -m 10 'error:' "$LOG" | tail -10 | tee -a "$LOG"
+
+# 再跑完整内核编译（可能耗时较久，建议后台运行本脚本）
+make "${MAKE_ARGS[@]}" >> "$LOG" 2>&1
 rc=$?
 
 echo "编译结束：$(date '+%F %T %Z')，返回码 $rc" | tee -a "$LOG"
