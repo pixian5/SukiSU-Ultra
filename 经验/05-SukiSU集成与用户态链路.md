@@ -35,6 +35,15 @@
 - 判据：只丢一个 → 清理机制；重启后全丢 → 落盘失败或文件损坏。`/data/adb/ksu/.allowlist` 普通 shell 不可读，文件级证据需要 root。
 - 不要只凭 `ksud` 带 `temporary-root watch` 参数就判断是临时授权：那是开机无条件启动的监视器。
 
+## 已确认真实原因：授权记录包名为空（2026-11-19）
+
+- 现象：超级用户列表里应用开关「没重启、过一会就变回去」。
+- 实测：`/data/adb/ksu/.allowlist` 里该 uid 的记录 `key`（包名）全零；`/data/system/packages.list` 里 uid 对应的是正常包名。
+- 机制：`ksu_prune_allowlist` 要求「uid 取模相等 + 包名逐字符相等」，空包名永不匹配 → 删除并写盘；`pkg_observer` 监听 `packages.list` 变化，装/更新/卸载应用即触发。用安装器（如 InstallerX）装应用会把它自己的授权删掉。
+- 根因：11-07 修「默认 app profile」时，内核返回的默认配置是 `memset(0)`，不带包名；JNI 先把传入包名写进 `profile.key`，但内核返回后整体覆盖成空；管理器再把空包名写回。
+- 修复：JNI 在 `profile.key` 为空时用调用方包名补回；内核 prune 跳过空包名记录。管理器需重编 APK，内核需重编刷入。
+- 教训：验证「授权成功」不够，还要验证「触发清理之后授权仍在」；`.allowlist` 里 key 为空就是硬证据。
+
 ## 身份与版本耦合
 
 - 管理器 APK 的证书大小与 SHA-256 在编译内核时写死；换签名、伪装包名或内核/管理器版本错配，都会导致「管理器认不出 root」。

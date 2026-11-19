@@ -158,6 +158,15 @@ Java_com_sukisu_ultra_Natives_getAppProfile(JNIEnv *env, jobject, jstring pkg, j
 
     bool useDefaultProfile = get_app_profile(&profile) != 0;
 
+    // 内核在「该 uid 还没有配置」时会返回一份默认配置，里面不带包名。
+    // 如果原样交给上层，管理器保存时就会把空包名写回内核；之后内核按
+    // /data/system/packages.list 清理授权时，空包名永远匹配不上真实包名，
+    // 这条授权就会被误删（表现为「授权过一会自己变回关闭」）。
+    // 这里用调用者传入的包名补回去，保证写入的配置始终带包名。
+    if (profile.key[0] == '\0' && key[0] != '\0') {
+        strcpy(profile.key, key);
+    }
+
     auto cls = env->FindClass("com/sukisu/ultra/Natives$Profile");
     auto constructor = env->GetMethodID(cls, "<init>", "()V");
     auto obj = env->NewObject(cls, constructor);

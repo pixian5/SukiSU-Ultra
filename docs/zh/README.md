@@ -97,6 +97,7 @@
 - [Google Play 崩溃弹窗定位](../20261115-1808-GooglePlay崩溃弹窗定位-Claude-Opus-6.md)：只读分析间歇性 Google Play 崩溃弹窗。崩溃进程是 `com.google.android.gms.unstable`，报错为 `android.os.Build` 类里找不到指定字段而直接 abort，堆栈第 6 帧在 `playintegrityfix` 模块、第 7–9 帧在 `zygisksu`；Play 商店在 17:21 自动更新后崩溃变密集。结论是 PlayIntegrityFix 按旧字段偏移写系统身份信息导致，与内核、SukiSU、SuSFS 无关；给出「先禁用模块验证、再考虑升级」的方案与代价，并记录本次零手机写入。
 - [root 授权自动消失的原因](../20261119-1915-root授权自动消失原因分析-Claude-Opus-6.md)：常驻进程 `ksud` 带 `temporary-root watch` 启动，管理器默认给的是 10 分钟临时租约，且租约绑定本次开机标识、重启一律失效；`ksud` 每秒扫描过期租约并撤销，应用详情页每秒读内核状态，发现授权变 false 就自动关开关。结论是临时租约到期，不是持久化失败、也不是内核问题。文档给出改成永久授权的步骤（先清掉临时开关再保存）与 `ksud temporary-root status` 验证方法。
 - [永久 root 授权为什么会丢：三条代码级路径](../20261119-1945-root永久授权丢失的代码级分析-Claude-Opus-6.md)：用户确认授权是永久后，上一轮「临时租约」结论不再适用。沿着写入链路（管理器 → `ksud temporary-root apply … permanent` → 内核 ioctl → 只改内存 → 异步 task_work 落盘）找出三条丢失路径：A 异步落盘失败且不重试（重启后丢）；B `track_throne` 按 `/data/system/packages.list` 校验并即时删除、写盘（不重启也可能丢，通常只丢一个应用）；C 授权文件被 `O_TRUNC` 覆盖写坏、启动时整份放弃（重启后全丢）。附不用动手的判据与需要的代码修复。
+- [授权过一会自己变回关闭：授权记录的包名是空的](../20261119-2005-授权被清空的真实原因与修复-Claude-Opus-6.md)：借用户临时授权的 Shell 只读读到真实授权文件，证实 uid 10800（`com.rosan.installer.x`，InstallerX）的记录里包名为空；内核清理要求 uid+包名精确匹配 `/data/system/packages.list`，所以每次装/更新应用（InstallerX 本身就是安装器）都会把这条授权删掉。根因追溯到 11-07 的默认配置修复：内核返回的 fallback 是 `memset(0)`、不带包名，JNI 用它覆盖了调用方传入的包名，管理器再把空包名写回。已提交两处修复（JNI 补回包名、内核清理跳过空包名），版本升到 0.0.8。
 
 ## KPM 支持
 

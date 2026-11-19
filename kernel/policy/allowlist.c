@@ -576,6 +576,12 @@ void ksu_prune_allowlist(bool (*is_uid_valid)(uid_t, char *, void *), void *data
         char *package = np->profile.key;
         // we use this uid for special cases, don't prune it!
         bool is_preserved_uid = uid == KSU_APP_PROFILE_PRESERVE_UID || uid == WEBVIEW_ZYGOTE_UID;
+        // 空包名记录无法与已安装应用清单匹配。旧版管理器在「首次授权」时
+        // 可能把内核返回的默认配置原样写回，导致 key 为空；若按常规逻辑
+        // 删除，用户会看到「授权过一会自己消失」。这里跳过，保留记录。
+        if (np->profile.key[0] == '\0') {
+            continue;
+        }
         if (!is_preserved_uid && !is_uid_valid(uid, package, data)) {
             modified = true;
             hlist_del_rcu(&np->list);
