@@ -44,6 +44,16 @@
 - 修复：JNI 在 `profile.key` 为空时用调用方包名补回；内核 prune 跳过空包名记录。管理器需重编 APK，内核需重编刷入。
 - 教训：验证「授权成功」不够，还要验证「触发清理之后授权仍在」；`.allowlist` 里 key 为空就是硬证据。
 
+## 修复实操：用 ksud 直接写入带包名的永久配置（无需刷机）
+
+- 先备份 `/data/adb/ksu/.allowlist`（`cp` 成带日期的 `.bak`）。
+- 用 root 执行：
+  `/data/adb/ksud temporary-root apply <管理器 uid> permanent false '<json>'`
+  json 字段必须 camelCase：`name`、`currentUid`、`allowSu`、`rootUseDefault`、`rootTemplate`、`uid`、`gid`、`groups`、`capabilities`、`context`（`u:r:ksu:s0`）、`namespace`、`nonRootUseDefault`、`umountModules`、`flags`（`1`）。字段名写错会报 `missing field currentUid`。
+- `permanent` 会同时清掉该 uid 的旧租约；`false` 表示不校验「当前是否已有 root」，避免旧记录包名为空时被 `profile changed` 拒绝。
+- 验证：`od -A d -t x1 -j 8 -N 40 .allowlist` 能看到包名；`ksud temporary-root status <uid>` 返回 `permanent`。
+- 这个操作同时更新内核内存和磁盘，**不需要重启、不需要刷机**；管理器之后读取到的 `key` 也非空，保存时不会再写空。
+
 ## 身份与版本耦合
 
 - 管理器 APK 的证书大小与 SHA-256 在编译内核时写死；换签名、伪装包名或内核/管理器版本错配，都会导致「管理器认不出 root」。
