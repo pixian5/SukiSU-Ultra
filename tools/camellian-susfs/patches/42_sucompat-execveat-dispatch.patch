@@ -1,0 +1,26 @@
+--- a/kernel/feature/sucompat.c	2026-11-20 03:50:44.870848398 +0800
++++ b/kernel/feature/sucompat.c	2026-11-20 03:50:44.342849223 +0800
+@@ -426,8 +426,22 @@
+     }
+ #endif
+ 
++    /*
++     * 必须先跑 ksud 钩子（init second_stage / 首个 zygote 的初始化），
++     * 但**不能 return**：
++     *
++     * 本构建启用了 KSU_COMPAT_USE_STATIC_KEY，ksud.c 里 zygote 分支走的是
++     * static_branch_disable(&is_first_zygote)，stop_execve_hook() 永远不被调用，
++     * 于是 ksu_execveat_hook 一直是初值 true。原写法 return 之后
++     * ksu_handle_execveat_sucompat() 一次都不会执行，su 永远不会被改写，
++     * 表现为 `su -c id` 报 No such file or directory（机型上真实 su 不存在）。
++     *
++     * 改为跑完 ksud 钩子继续往下走，与上游 5.x 分支的语义一致
++     * （那边同样是先调 ksud 钩子、再无条件调用 sucompat）。
++     * ksu_handle_execveat_sucompat() 开头会先比对文件名，非 su 路径直接返回，开销可忽略。
++     */
+     if (unlikely(ksu_execveat_hook)) {
+-        return ksu_handle_execveat_ksud(fd, filename_ptr, argv, envp, flags);
++        (void)ksu_handle_execveat_ksud(fd, filename_ptr, argv, envp, flags);
+     }
+ 
+     return ksu_handle_execveat_sucompat(fd, filename_ptr, argv, envp, flags);
