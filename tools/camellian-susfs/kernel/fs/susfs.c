@@ -96,12 +96,43 @@ bool susfs_is_current_app_uid(void)
 	return ((current_uid().val % 100000) >= 10000);
 }
 
+/*
+ * SukiSU 提权入口白名单：这些路径永远不允许加入 sus_path。
+ * 一旦隐藏，所有 APP / adb shell 都无法获得 root（表现为 su 打不开）。
+ * 即使管理器或用户配置误加，也必须在此拦截。
+ */
+static const char *const susfs_protected_su_paths[] = {
+	"/system/bin/su",
+	"/system/xbin/su",
+	"/sbin/su",
+	"/data/adb/ksu/bin/su",
+	"/data/adb/ksud",
+	"/data/adb/ksu/bin/ksud",
+};
+
+static bool susfs_is_protected_su_path(const char *path)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(susfs_protected_su_paths); i++) {
+		if (!strcmp(path, susfs_protected_su_paths[i]))
+			return true;
+	}
+	return false;
+}
+
 int susfs_core_add_sus_path(struct st_susfs_sus_path *info_in) {
 	struct st_susfs_sus_path info = *info_in;
 	struct st_susfs_sus_path_hlist *new_entry, *tmp_entry;
 	struct hlist_node *tmp_node;
 	int bkt;
 	bool update_hlist = false;
+
+	if (susfs_is_protected_su_path(info.target_pathname)) {
+		SUSFS_LOGE("refuse to hide protected su path '%s'\n",
+			   info.target_pathname);
+		return -EPERM;
+	}
 
 
 	spin_lock(&susfs_spin_lock);

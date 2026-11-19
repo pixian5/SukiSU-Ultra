@@ -56,13 +56,18 @@ static void susfs_reject_cmd(void __user **user_info, size_t size, const char *n
 void susfs_add_sus_path(void __user **user_info)
 {
 	struct st_susfs_sus_path info;
+	int err;
 
 	if (susfs_copy_in(user_info, &info, sizeof(info)))
 		return;
 	info.target_pathname[SUSFS_MAX_LEN_PATHNAME - 1] = '\0';
 	if (!info.target_pathname[0])
 		return;
-	susfs_core_add_sus_path(&info);
+	err = susfs_core_add_sus_path(&info);
+	/* 受保护的提权路径会被拒绝（-EPERM），把原因写回，避免管理器以为已生效 */
+	if (err && user_info && *user_info)
+		(void)copy_to_user((char __user *)(*user_info) + offsetof(struct st_susfs_sus_path, err),
+				   &err, sizeof(err));
 }
 
 /*
