@@ -1,0 +1,15 @@
+diff --git a/kernel/policy/allowlist.c b/kernel/policy/allowlist.c
+index 9c780424..2960fdfe 100644
+--- a/kernel/policy/allowlist.c
++++ b/kernel/policy/allowlist.c
+@@ -532,6 +532,10 @@ void ksu_prune_allowlist(bool (*is_uid_valid)(uid_t, char *, void *), void *data
+         char *package = np->profile.key;
+         // we use this uid for special cases, don't prune it!
+         bool is_preserved_uid = uid == KSU_APP_PROFILE_PRESERVE_UID || uid == WEBVIEW_ZYGOTE_UID;
++        // 空包名记录无法与已安装应用清单匹配，跳过而不是删除，避免误删有效授权
++        if (np->profile.key[0] == '\0') {
++            continue;
++        }
+         if (!is_preserved_uid && !is_uid_valid(uid, package, data)) {
+             modified = true;
+             hlist_del_rcu(&np->list);
