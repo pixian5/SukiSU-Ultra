@@ -27,6 +27,14 @@
 - 改永久授权：先在应用详情页关掉「临时 root」开关并保存一次（清掉旧租约），再打开 root 开关保存；用 `ksud temporary-root status <uid>` 验证，返回 `permanent` / `none` 才对。
 - 排查辅助：`adb shell ps -A` 里 `ksud` 带 `temporary-root watch` 参数，只说明监视器常驻，不代表当前一定存在租约。
 
+## 永久授权丢失的三条路径
+
+- **异步落盘失败**：`ksu_set_app_profile` 只改内存；`do_set_app_profile` 成功后调 `ksu_persistent_allow_list`，它把写文件任务挂在 PID 1 上，`task_work_add` 失败或 `filp_open` 失败都只打日志、不重试。特征是**重启后丢**。
+- **按安装列表误删**：`track_throne`（开机完成、应用安装/卸载/更新时触发）读 `/data/system/packages.list`，用「uid 取模相等 + 包名逐字符相等」校验，不匹配就删除并立即写盘。应用双开/工作资料、列表读取不完整时会误删。特征是**不重启也可能丢，通常只丢一个应用**。
+- **授权文件写坏**：`do_persistent_allow_list` 用 `O_TRUNC` 直接覆盖，没有临时文件 + 原子替换；写一半失败后 magic/版本校验不通过，启动时整份放弃。特征是**重启后所有授权一起丢**。
+- 判据：只丢一个 → 清理机制；重启后全丢 → 落盘失败或文件损坏。`/data/adb/ksu/.allowlist` 普通 shell 不可读，文件级证据需要 root。
+- 不要只凭 `ksud` 带 `temporary-root watch` 参数就判断是临时授权：那是开机无条件启动的监视器。
+
 ## 身份与版本耦合
 
 - 管理器 APK 的证书大小与 SHA-256 在编译内核时写死；换签名、伪装包名或内核/管理器版本错配，都会导致「管理器认不出 root」。

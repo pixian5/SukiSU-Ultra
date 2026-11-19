@@ -96,6 +96,7 @@
 - [挂载编号兼容层补齐与完整内核编译验证](../20261108-1125-挂载兼容层补齐与完整内核编译-Claude-Opus-6.md)：更正上一轮「缺 7 个符号」的误判——9 个里 4 个是头文件内联或同文件定义、1 个只是注释、2 个现有补丁已有，真正缺的只有 2 个；新增 `mnt_compat.c`，把公开 4.14 内核树 `fs/namespace.c` 里这两个函数的真实实现原样补进来；验证脚本改为「先单文件、后全量」两段式并可调并发；按每轮改源码加 0.0.1 的规则把 `VERSION` 升到 `0.0.7`。主线 v0.0.6 不变，不发布、不刷机。
 - [Google Play 崩溃弹窗定位](../20261115-1808-GooglePlay崩溃弹窗定位-Claude-Opus-6.md)：只读分析间歇性 Google Play 崩溃弹窗。崩溃进程是 `com.google.android.gms.unstable`，报错为 `android.os.Build` 类里找不到指定字段而直接 abort，堆栈第 6 帧在 `playintegrityfix` 模块、第 7–9 帧在 `zygisksu`；Play 商店在 17:21 自动更新后崩溃变密集。结论是 PlayIntegrityFix 按旧字段偏移写系统身份信息导致，与内核、SukiSU、SuSFS 无关；给出「先禁用模块验证、再考虑升级」的方案与代价，并记录本次零手机写入。
 - [root 授权自动消失的原因](../20261119-1915-root授权自动消失原因分析-Claude-Opus-6.md)：常驻进程 `ksud` 带 `temporary-root watch` 启动，管理器默认给的是 10 分钟临时租约，且租约绑定本次开机标识、重启一律失效；`ksud` 每秒扫描过期租约并撤销，应用详情页每秒读内核状态，发现授权变 false 就自动关开关。结论是临时租约到期，不是持久化失败、也不是内核问题。文档给出改成永久授权的步骤（先清掉临时开关再保存）与 `ksud temporary-root status` 验证方法。
+- [永久 root 授权为什么会丢：三条代码级路径](../20261119-1945-root永久授权丢失的代码级分析-Claude-Opus-6.md)：用户确认授权是永久后，上一轮「临时租约」结论不再适用。沿着写入链路（管理器 → `ksud temporary-root apply … permanent` → 内核 ioctl → 只改内存 → 异步 task_work 落盘）找出三条丢失路径：A 异步落盘失败且不重试（重启后丢）；B `track_throne` 按 `/data/system/packages.list` 校验并即时删除、写盘（不重启也可能丢，通常只丢一个应用）；C 授权文件被 `O_TRUNC` 覆盖写坏、启动时整份放弃（重启后全丢）。附不用动手的判据与需要的代码修复。
 
 ## KPM 支持
 
