@@ -1,0 +1,1 @@
+e1f77fedc078fde5de1dc0a0050a08b6734195570312eede2e09767c70aa6bf5  boot-sukisu-susfs-allowlist-fix-v2.img
