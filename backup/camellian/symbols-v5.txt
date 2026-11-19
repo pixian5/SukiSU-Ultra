@@ -1,0 +1,12 @@
+# boot-sukisu-susfs-allowlist-fix-v5.img
+# 由 out/System.map 生成，构建 2026-11-20 02:18:21 CST (#7)
+# uid=0 gen=2026-11-19T19:20:41Z
+
+ffffff800842b5d0 T do_sys_open
+ffffff800843d4e8 T getname_flags
+ffffff8009075470 T ksu_handle_umount
+ffffff80090755d8 T ksu_handle_faccessat
+ffffff8009075664 t ksu_sucompat_user_common
+ffffff80090757b0 T ksu_handle_stat
+ffffff800907583c T ksu_handle_open
+ffffff8009075c80 T ksu_handle_execveat
