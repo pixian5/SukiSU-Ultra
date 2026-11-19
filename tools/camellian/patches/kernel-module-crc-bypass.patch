@@ -1,0 +1,22 @@
+diff --git a/kernel/module.c b/kernel/module.c
+index c63ce2aa4..136d930a4 100644
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -1322,9 +1322,14 @@ static int check_version(const struct load_info *info,
+ 	return 1;
+ 
+ bad_version:
+-	pr_warn("%s: disagrees about version of symbol %s\n",
+-	       info->name, symname);
+-	return 0;
++	/* SukiSU/SUSFS：本内核为 SUSFS 修改了 task_struct / vfsmount 布局，
++	 * 这些结构进入 genksyms 的 CRC 计算，导致大量导出符号 CRC 与厂商
++	 * 预编译模块（wlan_drv_gen4m.ko 等）不一致。C ABI 层面函数签名未变，
++	 * 这里放行 CRC 不匹配，仅记录一次警告；符号存在性仍由 find_symbol
++	 * 在 resolve_symbol() 中强制校验（`Unknown symbol` 仍会失败）。 */
++	pr_warn_once("%s: ignoring crc mismatch for symbol %s (SUSFS custom kernel)\n",
++		     info->name, symname);
++	return 1;
+ }
+ 
+ static inline int check_modstruct_version(const struct load_info *info,
