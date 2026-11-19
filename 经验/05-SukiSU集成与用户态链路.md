@@ -18,6 +18,15 @@
 - `tools/camellian/scripts/integrate.py` 第 8、9 步
 - 管理器入口问题属于使用禁忌，不是代码补丁。
 
+## 临时 root 的租约（「授权自动消失」的坑）
+
+- 管理器保存授权时会调 `ksud temporary-root apply <manager> keep|permanent|<秒数> <json>`；只有 `permanent` 才是永久授权，传秒数就是限时租约。
+- 默认时长 **10 分钟**（`TemporaryRoot.defaultMinutes`，可改 5/10/30/60 或自定义，上限 7 天）；租约同时绑定本次开机的标识，**重启一律失效**，即使没设截止时间。
+- `ksud` 以 `temporary-root watch` 常驻，每秒扫描，过期就撤销；应用详情页每秒读一次内核 profile，发现 `allowSu` 变回 `false` 就把开关自动关掉。
+- 因此「授权成功后过一会自己消失、下次还要重新打开」通常是临时租约到期，**不是持久化失败或内核 bug**。
+- 改永久授权：先在应用详情页关掉「临时 root」开关并保存一次（清掉旧租约），再打开 root 开关保存；用 `ksud temporary-root status <uid>` 验证，返回 `permanent` / `none` 才对。
+- 排查辅助：`adb shell ps -A` 里 `ksud` 带 `temporary-root watch` 参数，只说明监视器常驻，不代表当前一定存在租约。
+
 ## 身份与版本耦合
 
 - 管理器 APK 的证书大小与 SHA-256 在编译内核时写死；换签名、伪装包名或内核/管理器版本错配，都会导致「管理器认不出 root」。
