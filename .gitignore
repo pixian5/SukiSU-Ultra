@@ -24,6 +24,7 @@ __pycache__
 # Kernel build workspace. Never commit: nested clones, object tree, ROM dumps, logs.
 /camellian-kernel/
 /SukiSU-Ultra/
+/SukiSU-Ultra-src/
 /susfs4ksu/
 /susfs4ksu-master/
 /susfs4ksu-shirk/
@@ -35,3 +36,11 @@ __pycache__
 /camellian_eea_global_images_*/
 /build-susfs.log
 /build-susfs.rc
+/build.log
+/build2.log
+/build-v2.log
+/build-v3.log
+/build-v4.log
+/build-v5.log
+/tmp/
+*.img.gz

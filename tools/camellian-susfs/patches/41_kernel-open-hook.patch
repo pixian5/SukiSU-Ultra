@@ -1,0 +1,76 @@
+diff --git a/fs/exec.c b/fs/exec.c
+index 836ee524a..303c5f8e9 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1696,6 +1696,12 @@ static int exec_binprm(struct linux_binprm *bprm)
+ /*
+  * sys_execve() executes a new program.
+  */
++#ifdef CONFIG_KSU
++/* SukiSU-Ultra：执行程序前的挂钩入口，实现位于 drivers/kernelsu */
++extern int ksu_handle_execveat(int *fd, struct filename **filename_ptr,
++                               void *argv, void *envp, int *flags);
++#endif
++
+ static int do_execveat_common(int fd, struct filename *filename,
+ 			      struct user_arg_ptr argv,
+ 			      struct user_arg_ptr envp,
+@@ -1710,6 +1716,12 @@ static int do_execveat_common(int fd, struct filename *filename,
+ 	if (IS_ERR(filename))
+ 		return PTR_ERR(filename);
+ 
++#ifdef CONFIG_KSU
++	/* SukiSU-Ultra：接管 su 请求，把执行路径重定向到 ksud 或 sh。
++	 * 只能调用一次：钩子会就地改写 filename，重复调用会把已改写的结果再处理一遍。 */
++	ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
++#endif
++
+ 	/*
+ 	 * We move the actual failure in case of RLIMIT_NPROC excess from
+ 	 * set*uid() to execve() because too many poorly written programs
+diff --git a/fs/open.c b/fs/open.c
+index 3b62683fe..4195c830e 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -359,6 +359,14 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
+  * We do this by temporarily clearing all FS-related capabilities and
+  * switching the fsuid/fsgid around to the real ones.
+  */
++#ifdef CONFIG_KSU
++/* SukiSU-Ultra：faccessat 挂钩，把对 su 的访问探测重定向到 sh */
++extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
++                                int *mode, int *__unused_flags);
++/* SukiSU-Ultra：open/openat 挂钩，把对 su 的读取重定向到 sh */
++extern int ksu_handle_open(int *dfd, const char __user **filename_user, int *flags);
++#endif
++
+ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
+ {
+ 	const struct cred *old_cred;
+@@ -369,6 +377,11 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
+ 	int res;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW;
+ 
++#ifdef CONFIG_KSU
++	/* SukiSU-Ultra：接管 su 的 access 探测 */
++	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
++#endif
++
+ 	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
+ 		return -EINVAL;
+ 
+@@ -1084,6 +1097,14 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
+ 	if (fd)
+ 		return fd;
+ 
++#ifdef CONFIG_KSU
++	/* SukiSU-Ultra：open/openat 挂钩。
++	 * sucompat 只改写了 stat/faccessat/execve，读文件仍然按真实路径查找；
++	 * 系统没有真实 su 文件时 head/cat/dd 会直接 ENOENT。
++	 * 这里把同样的「su -> sh」改写补到 open 层，保证三条路径行为一致。 */
++	ksu_handle_open(&dfd, &filename, &flags);
++#endif
++
+ 	tmp = getname(filename);
+ 	if (IS_ERR(tmp))
+ 		return PTR_ERR(tmp);

@@ -1,0 +1,34 @@
+--- a/kernel/feature/sucompat.c
++++ b/kernel/feature/sucompat.c
+@@ -321,6 +321,31 @@
+     return 0;
+ }
+ 
++/*
++ * open()/openat() 层改写。
++ *
++ * stat/faccessat/execve 三个钩子都能改路径，但 do_sys_open() 之前没有任何
++ * KSU 钩子。系统本身不含真实 /system/bin/su（SukiSU 的前提），于是
++ * `head -c 4 /system/bin/su`、`cat /system/bin/su` 这类读操作会直接 ENOENT，
++ * 而 `ls -l` / `stat` 却因为钩子改写成 sh 而"看起来正常"，表现自相矛盾。
++ *
++ * 这里把同样的 su -> sh 改写补到 open 层。两个约束：
++ *   1. 只做路径改写，不提权（escalate 传 false）；
++ *   2. 只处理只读打开。带 O_WRONLY/O_RDWR/O_CREAT/O_TRUNC 的写操作若被
++ *      改写到 /system/bin/sh 会损坏系统 shell，必须原样放行。
++ */
++int ksu_handle_open(int *dfd, const char __user **filename_user, int *flags)
++{
++    if (!is_su_allowed(filename_user))
++        return 0;
++
++    if (flags && (*flags & (O_WRONLY | O_RDWR | O_CREAT | O_TRUNC)))
++        return 0;
++
++    ksu_sucompat_user_common(filename_user, "open", false);
++    return 0;
++}
++
+ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user, void *argv, void *__never_use_envp,
+                                int *__never_use_flags)
+ {

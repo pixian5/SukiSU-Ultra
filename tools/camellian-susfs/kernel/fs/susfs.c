@@ -104,18 +104,90 @@ bool susfs_is_current_app_uid(void)
 static const char *const susfs_protected_su_paths[] = {
 	"/system/bin/su",
 	"/system/xbin/su",
+	"/system/system/bin/su",
+	"/system/system/xbin/su",
 	"/sbin/su",
+	"/vendor/bin/su",
 	"/data/adb/ksu/bin/su",
 	"/data/adb/ksud",
 	"/data/adb/ksu/bin/ksud",
 };
 
+/*
+ * 隐藏这些目录等于连带隐藏整条提权链（su 与 ksud 都在里面），
+ * 一旦生效所有 APP / adb shell 都无法获得 root，因此同样拒绝。
+ */
+static const char *const susfs_protected_su_dirs[] = {
+	"/system/bin",
+	"/system/xbin",
+	"/system/system/bin",
+	"/system/system/xbin",
+	"/sbin",
+	"/data/adb",
+	"/data/adb/ksu",
+	"/data/adb/ksu/bin",
+};
+
+/*
+ * 规范化路径：折叠重复斜杠、去掉 "./" 分量与结尾斜杠。
+ * 不做符号链接解析 —— /system/bin 本身就是指向 /system/system/bin 的链接，
+ * 解析会把两边混成一个，反而丢掉其中一个写法。
+ */
+static void susfs_normalize_path(const char *in, char *out, size_t out_len)
+{
+	size_t i = 0;
+	size_t j = 0;
+	bool last_slash = false;
+
+	if (!out_len)
+		return;
+
+	while (in[i] && j + 1 < out_len) {
+		if (in[i] == '/') {
+			if (!last_slash) {
+				out[j++] = '/';
+				last_slash = true;
+			}
+			i++;
+			continue;
+		}
+		if (last_slash && in[i] == '.' && in[i + 1] == '/') {
+			i += 2;
+			continue;
+		}
+		out[j++] = in[i++];
+		last_slash = false;
+	}
+	while (j > 1 && out[j - 1] == '/')
+		j--;
+	out[j] = '\0';
+}
+
 static bool susfs_is_protected_su_path(const char *path)
 {
+	char norm[SUSFS_MAX_LEN_PATHNAME];
 	int i;
 
+	if (!path || !path[0])
+		return false;
+
+	/* 超长路径会被截断而无法精确匹配，保守起见直接拒绝 */
+	if (strlen(path) >= sizeof(norm))
+		return true;
+
+	/* 含 ".." 分量的路径无法在字符串层面还原，同样保守拒绝 */
+	if (strstr(path, "/../") || !strcmp(path, "/..") ||
+	    (strlen(path) > 3 && !strcmp(path + strlen(path) - 3, "/..")))
+		return true;
+
+	susfs_normalize_path(path, norm, sizeof(norm));
+
 	for (i = 0; i < ARRAY_SIZE(susfs_protected_su_paths); i++) {
-		if (!strcmp(path, susfs_protected_su_paths[i]))
+		if (!strcmp(norm, susfs_protected_su_paths[i]))
+			return true;
+	}
+	for (i = 0; i < ARRAY_SIZE(susfs_protected_su_dirs); i++) {
+		if (!strcmp(norm, susfs_protected_su_dirs[i]))
 			return true;
 	}
 	return false;
