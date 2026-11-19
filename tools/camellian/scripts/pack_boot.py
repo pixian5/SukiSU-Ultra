@@ -16,8 +16,8 @@ import os
 import struct
 import sys
 
-STOCK = '/workspace/rom/camellian_eea_global_images_V14.0.4.0.TKSEUXM_13.0/images/boot.img'
-KERNEL = '/workspace/out/arch/arm64/boot/Image.gz'
+STOCK = os.environ.get('STOCK_BOOT', '/workspace/rom/boot-stock.img')
+KERNEL = os.environ.get('KERNEL_IMAGE_GZ', '/workspace/out/arch/arm64/boot/Image.gz')
 OUT_DIR = '/workspace/dist'
 OUT_IMG = sys.argv[1] if len(sys.argv) > 1 else OUT_DIR + '/boot-sukisu-stockdtb.img'
 
